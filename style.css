@@ -14,3 +14,13 @@ footer{text-align:center;font-size:.9em;color:#777;padding:30px 20px;border-top:
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0}.gallery figure{margin:0;background:#fff;border:1px solid #e6dfcf;border-radius:8px;overflow:hidden}.gallery img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}.gallery figcaption{font-size:.85em;color:#666;padding:8px 12px}
 blockquote{border-left:4px solid var(--gold);margin:16px 0;padding:6px 16px;color:var(--tea)}
 @media(max-width:700px){.meet{grid-template-columns:1fr}.meet div{padding:0 20px 20px}}
+.brand{display:inline-flex;align-items:center;gap:10px}
+.brand img{width:52px;height:52px;display:block}
+.meet-text{display:flex;gap:20px;align-items:flex-start}
+.calligraphy{width:110px;height:auto;flex:none}
+.calligraphy.float{float:right;margin:0 0 16px 24px;width:130px}
+@media(max-width:640px){.brand img{width:42px;height:42px}.calligraphy{width:80px}.calligraphy.float{width:90px;margin-left:14px}}
+.meet .meet-text img.calligraphy{width:96px;height:auto;max-width:96px;aspect-ratio:auto;object-fit:contain;border-radius:0;flex:none}
+.meet .meet-text>div{flex:1;min-width:0}
+.meet .meet-text img.calligraphy{min-height:0;height:auto}
+.meet .meet-text>div{padding:0}
