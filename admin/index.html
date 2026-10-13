@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>TeaFairy World Admin</title>
+<link rel="icon" href="/favicon-32.png">
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#F5EBD7;color:#222}
+header{background:#1F4D3A;color:#F5EBD7;padding:12px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+header b{font-size:18px;margin-right:auto}header button{background:none;border:1px solid #F5EBD7;color:#F5EBD7}
+header button.on{background:#F5EBD7;color:#1F4D3A}
+main{padding:20px;max-width:1200px;margin:auto}
+button{cursor:pointer;border-radius:6px;border:1px solid #1F4D3A;background:#1F4D3A;color:#fff;padding:6px 12px;font-size:14px}
+button.sec{background:#fff;color:#1F4D3A}button.red{background:#a33;border-color:#a33}
+input,textarea,select{font:inherit;padding:6px;border:1px solid #bbb;border-radius:6px;width:100%;box-sizing:border-box}
+table{width:100%;border-collapse:collapse;background:#fff}td,th{border-bottom:1px solid #eee;padding:8px;text-align:left;vertical-align:top;font-size:14px}
+.card{background:#fff;border-radius:10px;padding:16px;margin:12px 0;box-shadow:0 1px 3px #0001}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid label{font-size:13px;color:#555}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;background:#eee;font-size:12px}
+.pending{background:#fde9b5}.approved,.paid{background:#cfe8d5}.rejected,.cancelled,.refunded{background:#f3c6c6}.shipped{background:#cddcf5}
+img.th{width:56px;height:56px;object-fit:cover;border-radius:6px;margin:2px}
+#msg{position:fixed;bottom:16px;right:16px;background:#222;color:#fff;padding:10px 14px;border-radius:8px;display:none}
+</style></head><body>
+<header><b>🍵 TeaFairy World Admin</b><span id="nav"></span><span id="who"></span></header>
+<main id="app">Loading…</main><div id="msg"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SB_URL='https://lqghuvaazdnqzkbagbay.supabase.co', SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZ2h1dmFhemRucXprYmFnYmF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NDAxNTUsImV4cCI6MjEwNzQxNjE1NX0.wl9O-H-cptZO8_743-QLWX8IcojsGIIF2JI3cuiCeyM';
+const sb=supabase.createClient(SB_URL,SB_ANON);
+const $=s=>document.querySelector(s), app=$('#app');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=m=>'£'+(m/100).toFixed(2);
+function toast(t){const m=$('#msg');m.textContent=t;m.style.display='block';setTimeout(()=>m.style.display='none',3000)}
+function err(e){console.error(e);toast('Error: '+(e?.message||e))}
+let tab='products';
+const TABS={products:'Products',courses:'Courses',orders:'Orders',moderation:'Moderation'};
+
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) return login();
+  const {data:p}=await sb.from('profiles').select('is_admin').eq('id',session.user.id).maybeSingle();
+  $('#who').innerHTML=esc(session.user.email)+' <button class="sec" onclick="sb.auth.signOut().then(()=>location.reload())">Sign out</button>';
+  if(!p?.is_admin){app.innerHTML='<div class="card">This account is not an admin.</div>';return}
+  $('#nav').innerHTML=Object.entries(TABS).map(([k,v])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${v}</button>`).join(' ');
+  ({products,courses,orders,moderation})[tab]();
+}
+function go(t){tab=t;location.hash=t;boot()}
+if(TABS[location.hash.slice(1)]) tab=location.hash.slice(1);
+
+function login(){
+  app.innerHTML=`<div class="card" style="max-width:380px;margin:60px auto"><h2>Admin sign in</h2>
+  <p>Email</p><input id="em" type="email" value="hello@teafairyworld.co.uk"><p><button onclick="sendCode()">Send code</button></p>
+  <div id="codebox" style="display:none"><p>6-digit code from the email</p><input id="code" inputmode="numeric"><p><button onclick="verify()">Sign in</button></p></div></div>`;
+}
+async function sendCode(){const {error}=await sb.auth.signInWithOtp({email:$('#em').value.trim(),options:{shouldCreateUser:false}});if(error)return err(error);$('#codebox').style.display='block';toast('Code sent')}
+async function verify(){const {error}=await sb.auth.verifyOtp({email:$('#em').value.trim(),token:$('#code').value.trim(),type:'email'});if(error)return err(error);boot()}
+
+// ---------- products ----------
+let P=[];
+async function products(){
+  const {data,error}=await sb.from('products').select('*').order('name_en');if(error)return err(error);P=data;
+  app.innerHTML=`<p><button onclick="editProduct()">+ New product</button></p><table><tr><th></th><th>SKU</th><th>Name</th><th>Price</th><th>Stock</th><th>Ships to</th><th>Active</th><th></th></tr>`+
+  data.map(p=>`<tr><td>${(p.images?.[0]||p.image_url)?`<img class="th" src="${esc(p.images?.[0]||p.image_url)}">`:''}</td><td>${esc(p.sku)}</td><td>${esc(p.name_en)}<br><small>${esc(p.name_zh)}</small></td><td>${money(p.price_minor)}</td><td>${p.stock}</td><td>${esc((p.ship_regions||[]).join(', '))}</td>
+  <td><input type="checkbox" style="width:auto" ${p.active?'checked':''} onchange="toggleActive('${p.id}',this.checked)"></td><td><button class="sec" onclick="editProduct('${p.id}')">Edit</button></td></tr>`).join('')+'</table>';
+}
+async function toggleActive(id,v){const {error}=await sb.from('products').update({active:v}).eq('id',id);error?err(error):toast(v?'Activated':'Deactivated')}
+function editProduct(id){
+  const p=P.find(x=>x.id===id)||{sku:'',name_en:'',name_zh:'',type:'tea',description_en:'',description_zh:'',price_minor:0,stock:0,ship_regions:['GB'],active:false,images:[],weight_g:null,cogs_minor:null};
+  const f=(k,l,t='text')=>`<div><label>${l}</label><input id="f_${k}" type="${t}" value="${esc(p[k]??'')}"></div>`;
+  app.innerHTML=`<div class="card"><h3>${id?'Edit':'New'} product</h3><div class="grid">
+  ${f('sku','SKU')}<div><label>Type</label><select id="f_type">${['tea','teaware','set','sample'].map(t=>`<option ${p.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+  ${f('name_en','Name (English)')}${f('name_zh','Name (中文)')}
+  <div><label>Description (English)</label><textarea id="f_description_en" rows="4">${esc(p.description_en)}</textarea></div>
+  <div><label>Description (中文)</label><textarea id="f_description_zh" rows="4">${esc(p.description_zh)}</textarea></div>
+  <div><label>Price (GBP, e.g. 12.50)</label><input id="f_price" value="${(p.price_minor/100).toFixed(2)}"></div>
+  <div><label>Unit cost GBP (private, for margin)</label><input id="f_cogs" value="${p.cogs_minor!=null?(p.cogs_minor/100).toFixed(2):''}"></div>
+  ${f('stock','Stock','number')}${f('weight_g','Weight (g)','number')}
+  <div><label>Shipping countries (ISO codes, comma separated, e.g. GB, IE, FR, US)</label><input id="f_ship" value="${esc((p.ship_regions||[]).join(', '))}"></div>
+  <div><label>Active (visible in app)</label><input id="f_active" type="checkbox" style="width:auto" ${p.active?'checked':''}></div></div>
+  <h4>Images</h4><div id="imgs"></div><input type="file" id="up" accept="image/*" multiple style="width:auto">
+  <p><button onclick="saveProduct('${id||''}')">Save</button> <button class="sec" onclick="products()">Cancel</button></p></div>`;
+  window._imgs=[...(p.images||[])]; if(!_imgs.length&&p.image_url)_imgs.push(p.image_url); drawImgs();
+  $('#up').onchange=async e=>{for(const file of e.target.files){const path=`${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g,'_')}`;
+    const {error}=await sb.storage.from('product-images').upload(path,file,{contentType:file.type});if(error){err(error);continue}
+    _imgs.push(sb.storage.from('product-images').getPublicUrl(path).data.publicUrl);drawImgs()}};
+}
+function drawImgs(){$('#imgs').innerHTML=_imgs.map((u,i)=>`<span><img class="th" src="${esc(u)}"><button class="sec" onclick="_imgs.splice(${i},1);drawImgs()">×</button></span>`).join('')||'<small>No images</small>'}
+async function saveProduct(id){
+  const v=k=>$('#f_'+k).value.trim();
+  const row={sku:v('sku'),type:v('type'),name_en:v('name_en'),name_zh:v('name_zh'),description_en:v('description_en'),description_zh:v('description_zh'),
+    price_minor:Math.round(parseFloat(v('price'))*100),cogs_minor:v('cogs')?Math.round(parseFloat(v('cogs'))*100):null,
+    stock:parseInt(v('stock')||'0'),weight_g:v('weight_g')?parseInt(v('weight_g')):null,currency:'GBP',
+    ship_regions:v('ship').split(/[ ,]+/).filter(Boolean).map(s=>s.toUpperCase()),active:$('#f_active').checked,images:_imgs,image_url:_imgs[0]||null};
+  if(!row.sku||!row.name_en||!row.name_zh||isNaN(row.price_minor))return toast('SKU, both names and price are required');
+  const {error}=id?await sb.from('products').update(row).eq('id',id):await sb.from('products').insert(row);
+  if(error)return err(error);toast('Saved');products();
+}
+
+// ---------- courses ----------
+async function courses(){
+  const {data,error}=await sb.from('courses').select('*, course_lessons(*)').order('title_en');if(error)return err(error);
+  app.innerHTML=data.map(c=>`<div class="card"><div class="grid">
+   <div><label>Title (English)</label><input id="c_${c.id}_title_en" value="${esc(c.title_en)}"></div><div><label>Title (中文)</label><input id="c_${c.id}_title_zh" value="${esc(c.title_zh)}"></div>
+   <div><label>Description (English)</label><textarea id="c_${c.id}_description_en">${esc(c.description_en)}</textarea></div><div><label>Description (中文)</label><textarea id="c_${c.id}_description_zh">${esc(c.description_zh)}</textarea></div>
+   <div><label>Instructor</label><input id="c_${c.id}_instructor" value="${esc(c.instructor)}"></div>
+   <div><label>Status</label><select id="c_${c.id}_status"><option ${c.status==='draft'?'selected':''}>draft</option><option ${c.status==='published'?'selected':''}>published</option></select></div></div>
+   <p><small>Apple product: ${esc(c.apple_product_id)}</small> <button onclick="saveCourse('${c.id}')">Save course</button></p>
+   <table><tr><th>#</th><th>Title (EN)</th><th>Title (中文)</th><th>Free preview</th><th></th></tr>${c.course_lessons.sort((a,b)=>a.position-b.position).map(l=>`<tr>
+   <td>${l.position}</td><td><input id="l_${l.id}_title_en" value="${esc(l.title_en)}"></td><td><input id="l_${l.id}_title_zh" value="${esc(l.title_zh)}"></td>
+   <td><input id="l_${l.id}_prev" type="checkbox" style="width:auto" ${l.is_preview?'checked':''}></td><td><button class="sec" onclick="saveLesson('${l.id}')">Save</button></td></tr>`).join('')}</table>
+   <p><button class="sec" onclick="addLesson('${c.id}',${Math.max(0,...c.course_lessons.map(l=>l.position))+1})">+ Add lesson</button></p></div>`).join('')||'<div class="card">No courses</div>';
+}
+async function saveCourse(id){const g=k=>$(`#c_${id}_${k}`).value;const {error}=await sb.from('courses').update({title_en:g('title_en'),title_zh:g('title_zh'),description_en:g('description_en'),description_zh:g('description_zh'),instructor:g('instructor'),status:g('status')}).eq('id',id);error?err(error):toast('Saved')}
+async function saveLesson(id){const {error}=await sb.from('course_lessons').update({title_en:$(`#l_${id}_title_en`).value,title_zh:$(`#l_${id}_title_zh`).value,is_preview:$(`#l_${id}_prev`).checked}).eq('id',id);error?err(error):toast('Saved')}
+async function addLesson(cid,pos){const {error}=await sb.from('course_lessons').insert({course_id:cid,position:pos,title_en:'New lesson',title_zh:'新课程'});error?err(error):courses()}
+
+// ---------- orders ----------
+async function orders(){
+  const st=window._ost||'paid';
+  let q=sb.from('orders').select('*, order_items(quantity, unit_price_minor, products(sku,name_en))').order('created_at',{ascending:false}).limit(200);
+  if(st!=='all')q=q.eq('status',st);
+  const {data,error}=await q;if(error)return err(error);
+  const addr=a=>a?esc([a.line1,a.line2,a.city,a.state,a.postal_code,a.country].filter(Boolean).join(', ')):'';
+  app.innerHTML=`<p>Status: <select style="width:auto" onchange="_ost=this.value;orders()">${['paid','shipped','completed','pending','cancelled','refunded','all'].map(s=>`<option ${s===st?'selected':''}>${s}</option>`).join('')}</select></p>
+  <table><tr><th>Date</th><th>Status</th><th>Customer / ship to</th><th>Items</th><th>Total</th><th>Shipping</th></tr>`+data.map(o=>`<tr>
+  <td>${new Date(o.created_at).toLocaleString('en-GB')}<br>${o.is_test?'<span class="tag">TEST</span>':''}</td><td><span class="tag ${o.status}">${o.status}</span></td>
+  <td>${esc(o.shipping_name)}<br><small>${addr(o.shipping_address)}<br>${esc(o.customer_email)}</small></td>
+  <td>${o.order_items.map(i=>`${i.quantity}× ${esc(i.products?.name_en)} <small>(${esc(i.products?.sku)})</small>`).join('<br>')}</td>
+  <td>${money(o.amount_minor)}<br><small>incl. ship ${money(o.shipping_minor)}</small></td>
+  <td>${o.status==='paid'?`<input id="tr_${o.id}" placeholder="Tracking number"><input id="ca_${o.id}" placeholder="Carrier" value="Royal Mail"><button onclick="ship('${o.id}')">Mark shipped</button>`:
+     `${esc(o.carrier)} ${esc(o.tracking_number)}${o.status==='shipped'?`<br><button class="sec" onclick="setStatus('${o.id}','completed')">Mark completed</button>`:''}`}</td></tr>`).join('')+'</table>'+(data.length?'':'<p>No orders</p>');
+}
+async function ship(id){const tn=$('#tr_'+id).value.trim();if(!tn)return toast('Enter a tracking number');
+  const {error}=await sb.from('orders').update({status:'shipped',tracking_number:tn,carrier:$('#ca_'+id).value.trim(),shipped_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',id);error?err(error):(toast('Marked shipped'),orders())}
+async function setStatus(id,s){const {error}=await sb.from('orders').update({status:s,updated_at:new Date().toISOString()}).eq('id',id);error?err(error):orders()}
+
+// ---------- moderation ----------
+async function moderation(){
+  const {data,error}=await sb.rpc('admin_queue');if(error)return err(error);
+  const rows=[];for(const r of data){const urls=[];for(const p of r.photo_paths||[]){const {data:s}=await sb.storage.from('checkin-photos').createSignedUrl(p,600);if(s)urls.push(s.signedUrl)}rows.push({...r,urls})}
+  app.innerHTML=`<p>Open reports and posts held by the word list / AI screening. Reported content is hidden from the reporter at once and from everyone after 3 reports. Apple expects reports to be handled within 24 hours.</p><table><tr><th>Type</th><th>Content</th><th>Status</th><th>Reports</th><th>Actions</th></tr>`+
+  rows.map(r=>`<tr><td>${r.target_type}</td><td>${esc(r.content)}<br>${r.urls.map(u=>`<a href="${u}" target="_blank"><img class="th" src="${u}"></a>`).join('')}<br><small>author ${esc(r.author_id)} ${r.author_banned?'<span class="tag rejected">banned</span>':''}</small></td>
+  <td><span class="tag ${r.moderation_status}">${r.moderation_status}</span><br><small>${esc(r.moderation_note)}</small></td><td>${r.report_count}<br><small>${esc(r.reasons.join('; '))}</small></td>
+  <td>${r.target_type!=='user'?`<button class="red" onclick="mod('${r.target_type}','${r.target_id}','hide')">Hide</button> <button class="sec" onclick="mod('${r.target_type}','${r.target_id}','restore')">Restore</button>`:`<button class="sec" onclick="mod('user','${r.target_id}','dismiss')">Dismiss</button>`}
+  <br><br><button class="red" onclick="ban('${r.author_id}',${!r.author_banned})">${r.author_banned?'Unban':'Ban'} user</button></td></tr>`).join('')+'</table>'+(rows.length?'':'<p>Queue is empty 🎉</p>');
+}
+async function mod(t,id,a){const {error}=await sb.rpc('admin_moderate',{t,target:id,action:a});error?err(error):(toast('Done'),moderation())}
+async function ban(uid,b){if(!confirm(b?'Ban this user and hide all their posts?':'Unban this user?'))return;const {error}=await sb.rpc('admin_set_ban',{target:uid,ban:b});error?err(error):(toast('Done'),moderation())}
+sb.auth.onAuthStateChange(()=>{});boot();
+</script></body></html>
