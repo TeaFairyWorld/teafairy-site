@@ -24,3 +24,6 @@ blockquote{border-left:4px solid var(--gold);margin:16px 0;padding:6px 16px;colo
 .meet .meet-text>div{flex:1;min-width:0}
 .meet .meet-text img.calligraphy{min-height:0;height:auto}
 .meet .meet-text>div{padding:0}
+.products{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.product img{width:100%;height:auto;border-radius:8px}
+.product h3 small{font-weight:normal;opacity:.75}
