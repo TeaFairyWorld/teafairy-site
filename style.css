@@ -27,3 +27,5 @@ blockquote{border-left:4px solid var(--gold);margin:16px 0;padding:6px 16px;colo
 .products{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 .product img{width:100%;height:auto;border-radius:8px}
 .product h3 small{font-weight:normal;opacity:.75}
+.stats .card{position:relative;overflow:hidden;isolation:isolate;min-height:120px;display:flex;flex-direction:column;justify-content:center}
+.stats .card::before{content:"";position:absolute;inset:0;background:url(images/badge-watermark.png) center/auto 80% no-repeat;opacity:.15;z-index:-1;pointer-events:none}
