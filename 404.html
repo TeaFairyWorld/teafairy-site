@@ -3,7 +3,7 @@
 <main id="m"><h1>Page not found</h1><p><a href="/">Go to the home page</a></p></main>
 <script>
 // Partner links: teafairyworld.co.uk/r/CODE — store the code, count the click, offer the app.
-const m=location.pathname.match(/^\/r\/([A-Za-z0-9]{3,20})\/?$/);
+const m=location.pathname.match(/^\/r\/([A-Za-z0-9-]{3,20})\/?$/);
 if(m){const code=m[1].toUpperCase();try{localStorage.setItem('referral_code',code)}catch(e){}
  fetch('https://lqghuvaazdnqzkbagbay.supabase.co/rest/v1/rpc/track_referral',{method:'POST',headers:{'Content-Type':'application/json',apikey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZ2h1dmFhemRucXprYmFnYmF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NDAxNTUsImV4cCI6MjEwNzQxNjE1NX0.wl9O-H-cptZO8_743-QLWX8IcojsGIIF2JI3cuiCeyM',Authorization:'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZ2h1dmFhemRucXprYmFnYmF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NDAxNTUsImV4cCI6MjEwNzQxNjE1NX0.wl9O-H-cptZO8_743-QLWX8IcojsGIIF2JI3cuiCeyM'},body:JSON.stringify({c:code,src:'web'})})
  .then(r=>r.json()).then(ok=>{document.getElementById('m').innerHTML=ok===true
