@@ -210,24 +210,23 @@ async function ban(uid,b){if(!confirm(b?'Ban this user and hide all their posts?
 // ---------- Tea Fairy's Picks & official posts ----------
 const thisMonth=()=>new Date().toISOString().slice(0,7);
 async function community(){
-  const [{data:acc,error:e1},{data:posts,error:e2}]=await Promise.all([sb.rpc('admin_team_accounts'),
+  const [{data:acc,error:e1},{data:posts,error:e2}]=await Promise.all([sb.rpc('admin_official_accounts'),
     sb.from('brew_checkins').select('id,user_id,text,photo_paths,stream_uid,video_path,author_name,author_badge,pick_month,pick_note,created_at').eq('visibility','public').eq('moderation_status','approved').order('created_at',{ascending:false}).limit(60)]);
   if(e1||e2)return err(e1||e2);
-  const teamIds=new Set((acc||[]).filter(a=>a.role==='team').map(a=>a.id));
-  const official=(acc||[]).filter(a=>a.role==='official');
+  const official=acc||[];
   const rows=[];for(const r of posts){let u=null;if(r.photo_paths?.[0]){const {data:x}=await sb.storage.from('checkin-photos').createSignedUrl(r.photo_paths[0],600);u=x?.signedUrl}rows.push({...r,u})}
   app.innerHTML=`<div class="card"><h3>Tea Fairy's Picks</h3><p>An <b>editorial selection</b> by our team — never call it a contest, competition or prize draw. Picks for the latest month show on the app's Today tab; the author sees a “Tea Fairy's Pick” note on their check-in.</p></div>
-  <div class="card"><h3>Accounts</h3><p>Official = shown with an “Official” badge and can be posted for from here. Team = internal only (no public badge): no points, no rewards, no product reviews. The person must have signed in to the app once.</p>
-  <table><tr><th>Email</th><th>Name</th><th>Role</th><th></th></tr>${(acc||[]).map(a=>`<tr><td>${esc(a.email)}</td><td>${esc(a.nickname)}</td><td>${a.role}</td><td><button class="sec" onclick="setRole('${esc(a.email)}','')">Remove</button></td></tr>`).join('')}</table>
-  <p><input id="ra_em" placeholder="email" style="width:260px"> <input id="ra_nick" placeholder="display name (optional)" style="width:200px"> <select id="ra_role" style="width:auto"><option value="team">team (internal)</option><option value="official">official</option></select> <button onclick="setRole($('#ra_em').value,$('#ra_role').value,$('#ra_nick').value)">Save</button></p></div>
+  <div class="card"><h3>Official account</h3><p>Shown in the app with an “Official” badge and can be posted for from here. It must have signed in to the app once. Team members simply use the app as normal users.</p>
+  <table><tr><th>Email</th><th>Name</th><th></th></tr>${(acc||[]).map(a=>`<tr><td>${esc(a.email)}</td><td>${esc(a.nickname)}</td><td><button class="sec" onclick="setRole('${esc(a.email)}','')">Remove</button></td></tr>`).join('')}</table>
+  <p><input id="ra_em" placeholder="email" style="width:260px"> <input id="ra_nick" placeholder="display name (optional)" style="width:200px"> <button onclick="setRole($('#ra_em').value,'official',$('#ra_nick').value)">Save</button></p></div>
   <div class="card"><h3>Post as the official account</h3>${official.length?`<p>Account <select id="np_author" style="width:auto">${official.map(a=>`<option value="${a.id}">${esc(a.nickname||a.email)}</option>`).join('')}</select></p>
   <p>Caption</p><textarea id="np_text" maxlength="500" rows="3" style="width:100%"></textarea>
   <p>Photos (up to 3) <input id="np_photos" type="file" accept="image/*" multiple></p>
   <p>…or short video (MP4/MOV, max 50 MB, ~60 s) <input id="np_video" type="file" accept="video/mp4,video/quicktime"> or Cloudflare Stream UID <input id="np_stream" style="width:300px"></p>
   <p><label><input id="np_pick" type="checkbox" style="width:auto"> Mark as Tea Fairy's Pick for</label> <input id="np_month" type="month" value="${thisMonth()}" style="width:auto"> note <input id="np_note" placeholder="optional reward / thank-you note" style="width:260px"></p>
-  <p><button id="np_btn" onclick="newPost()">Publish</button></p>`:'<p>Set an official account above first.</p>'}</div>
+  <p><button id="np_btn" onclick="newPost()">Publish</button></p>`:'<p>Add the official account above first.</p>'}</div>
   <div class="card"><h3>Public check-ins</h3><table><tr><th></th><th>Author</th><th>Caption</th><th>Pick</th></tr>${rows.map(r=>`<tr><td>${r.u?`<img class="th" src="${r.u}">`:r.stream_uid||r.video_path?'🎬':''}</td>
-  <td>${esc(r.author_name||r.user_id.slice(0,8))} ${r.author_badge?'<span class="tag approved">official</span>':''}${teamIds.has(r.user_id)?' <small>(team)</small>':''}<br><small>${new Date(r.created_at).toLocaleDateString()}</small></td><td>${esc(r.text)}</td>
+  <td>${esc(r.author_name||r.user_id.slice(0,8))} ${r.author_badge?'<span class="tag approved">official</span>':''}<br><small>${new Date(r.created_at).toLocaleDateString()}</small></td><td>${esc(r.text)}</td>
   <td><input id="pm_${r.id}" type="month" value="${r.pick_month?r.pick_month.slice(0,7):thisMonth()}" style="width:auto"><br><input id="pn_${r.id}" value="${esc(r.pick_note)}" placeholder="optional note"><br>
   ${r.pick_month?`<span class="tag approved">pick ${r.pick_month.slice(0,7)}</span> <button class="sec" onclick="setPick('${r.id}',true)">Update</button> <button class="red" onclick="setPick('${r.id}',false)">Unpick</button>`:`<button onclick="setPick('${r.id}',true)">Mark as pick</button>`}</td></tr>`).join('')}</table></div>`;
 }
