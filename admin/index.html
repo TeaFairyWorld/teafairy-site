@@ -123,10 +123,8 @@ async function fn(body){const r=await fetch(FN,{method:'POST',headers:{...await 
 let VBUSY=false;
 async function videos(){
   app.innerHTML=`<div class="card"><h3>Course videos → Cloudflare Stream</h3>
-  <p>Drag files from <b>D:\\tea_subs\\app</b> into the box (you can drop all at once). The number at the start of the file name picks the lesson:</p>
-  <ul><li><code>NN_title_EN.mp4</code> → video for lesson NN (00 = trailer)</li><li><code>NN.srt</code> → Chinese captions, <code>NN_en.srt</code> → English captions</li>
-  <li><code>NN_en.m4a</code> (or .aac/.mp3) → English dub audio track</li></ul>
-  <p>Videos upload one at a time and can resume: if the connection drops, drop the same file again and it continues. Keep this tab open until the list says done. Captions and audio need the lesson's video uploaded first (dropping them together is fine; videos go first).</p>
+  <p>Drag the <b>.mp4</b> files from <b>D:\\tea_subs\\app_en</b> into the box (you can drop them all at once). The number at the start of the file name picks the lesson: <code>NN_title_EN.mp4</code> → lesson NN (00 = trailer).</p>
+  <p>No .srt or .m4a files are needed: the subtitles are burned into the picture. Videos upload one at a time; keep this tab open until each says ✅. If one fails or gets stuck, reload this page and drop that file again; it starts over cleanly and replaces the earlier attempt.</p>
   <div id="drop" style="border:3px dashed #1F4D3A;border-radius:12px;padding:40px;text-align:center;background:#fffaf0">Drop files here or <input type="file" id="vf" multiple accept=".mp4,.mov,.srt,.vtt,.m4a,.aac,.mp3,.wav" style="width:auto"></div>
   <div id="queue"></div></div><div class="card"><h3>Lessons <button class="sec" onclick="vstatus()">Refresh</button></h3><div id="vlist">Loading…</div></div>`;
   const d=$('#drop');d.ondragover=e=>{e.preventDefault();d.style.background='#e8f3ea'};d.ondragleave=()=>d.style.background='#fffaf0';
@@ -166,11 +164,14 @@ async function vrun(){
 async function vupload(r){
   const headers=await fnHeaders();
   await new Promise((res,rej)=>{
-    const up=new tus.Upload(r.f,{endpoint:FN+'?action=tus&position='+r.k.pos,headers,chunkSize:50*1024*1024,retryDelays:[0,3000,10000,30000,60000],
-      metadata:{name:r.f.name,filetype:r.f.type},removeFingerprintOnSuccess:true,
+    // Supabase auth headers go ONLY to our function (creation POST). Sending them to Cloudflare's
+    // upload URL breaks the CORS preflight (apikey/Authorization not allowed) and stalls at 0%.
+    const up=new tus.Upload(r.f,{endpoint:FN+'?action=tus&position='+r.k.pos,chunkSize:50*1024*1024,retryDelays:[0,3000,10000,30000],
+      metadata:{filetype:r.f.type||'video/mp4'},storeFingerprintForResuming:false,
+      onBeforeRequest:req=>{if(req.getURL().startsWith(FN))for(const [k,v] of Object.entries(headers))req.setHeader(k,v)},
       onError:e=>rej(e),onProgress:(a,b)=>vset(r,'uploading '+(a/b*100).toFixed(1)+'%  ('+(a/1048576).toFixed(0)+' / '+(b/1048576).toFixed(0)+' MB)'),
       onSuccess:async()=>{try{const uid=up.url.split('/').pop().split('?')[0];await fn({action:'attach',position:r.k.pos,uid});vset(r,'✅ uploaded, Cloudflare is processing');res()}catch(e){rej(e)}}});
-    up.findPreviousUploads().then(p=>{if(p.length){up.resumeFromPreviousUpload(p[0]);vset(r,'resuming…')}up.start()});
+    vset(r,'starting…');up.start();
   });
 }
 
