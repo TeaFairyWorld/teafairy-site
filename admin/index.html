@@ -22,6 +22,7 @@ img.th{width:56px;height:56px;object-fit:cover;border-radius:6px;margin:2px}
 <header><b>🍵 TeaFairy World Admin</b><span id="nav"></span><span id="who"></span></header>
 <main id="app">Loading…</main><div id="msg"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.2.3/dist/tus.min.js"></script>
 <script>
 const SB_URL='https://lqghuvaazdnqzkbagbay.supabase.co', SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZ2h1dmFhemRucXprYmFnYmF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NDAxNTUsImV4cCI6MjEwNzQxNjE1NX0.wl9O-H-cptZO8_743-QLWX8IcojsGIIF2JI3cuiCeyM';
 const sb=supabase.createClient(SB_URL,SB_ANON);
@@ -31,7 +32,7 @@ const money=m=>'£'+(m/100).toFixed(2);
 function toast(t){const m=$('#msg');m.textContent=t;m.style.display='block';setTimeout(()=>m.style.display='none',3000)}
 function err(e){console.error(e);toast('Error: '+(e?.message||e))}
 let tab='products';
-const TABS={products:'Products',courses:'Courses',orders:'Orders',moderation:'Moderation'};
+const TABS={products:'Products',courses:'Courses',videos:'Videos',orders:'Orders',moderation:'Moderation'};
 
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
@@ -40,7 +41,7 @@ async function boot(){
   $('#who').innerHTML=esc(session.user.email)+' <button class="sec" onclick="sb.auth.signOut().then(()=>location.reload())">Sign out</button>';
   if(!p?.is_admin){app.innerHTML='<div class="card">This account is not an admin.</div>';return}
   $('#nav').innerHTML=Object.entries(TABS).map(([k,v])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${v}</button>`).join(' ');
-  ({products,courses,orders,moderation})[tab]();
+  ({products,courses,videos,orders,moderation})[tab]();
 }
 function go(t){tab=t;location.hash=t;boot()}
 if(TABS[location.hash.slice(1)]) tab=location.hash.slice(1);
@@ -113,6 +114,65 @@ async function courses(){
 async function saveCourse(id){const g=k=>$(`#c_${id}_${k}`).value;const {error}=await sb.from('courses').update({title_en:g('title_en'),title_zh:g('title_zh'),description_en:g('description_en'),description_zh:g('description_zh'),instructor:g('instructor'),status:g('status')}).eq('id',id);error?err(error):toast('Saved')}
 async function saveLesson(id){const {error}=await sb.from('course_lessons').update({title_en:$(`#l_${id}_title_en`).value,title_zh:$(`#l_${id}_title_zh`).value,is_preview:$(`#l_${id}_prev`).checked}).eq('id',id);error?err(error):toast('Saved')}
 async function addLesson(cid,pos){const {error}=await sb.from('course_lessons').insert({course_id:cid,position:pos,title_en:'New lesson',title_zh:'新课程'});error?err(error):courses()}
+
+
+// ---------- videos (Cloudflare Stream) ----------
+const FN=SB_URL+'/functions/v1/stream-admin';
+async function fnHeaders(){const {data:{session}}=await sb.auth.getSession();return {Authorization:'Bearer '+session.access_token,apikey:SB_ANON}}
+async function fn(body){const r=await fetch(FN,{method:'POST',headers:{...await fnHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok||j.error)throw new Error(j.error||r.status);return j}
+let VBUSY=false;
+async function videos(){
+  app.innerHTML=`<div class="card"><h3>Course videos → Cloudflare Stream</h3>
+  <p>Drag files from <b>D:\\tea_subs\\app</b> into the box (you can drop all at once). The number at the start of the file name picks the lesson:</p>
+  <ul><li><code>NN_title_EN.mp4</code> → video for lesson NN (00 = trailer)</li><li><code>NN.srt</code> → Chinese captions, <code>NN_en.srt</code> → English captions</li>
+  <li><code>NN_en.m4a</code> (or .aac/.mp3) → English dub audio track</li></ul>
+  <p>Videos upload one at a time and can resume: if the connection drops, drop the same file again and it continues. Keep this tab open until the list says done. Captions and audio need the lesson's video uploaded first (dropping them together is fine; videos go first).</p>
+  <div id="drop" style="border:3px dashed #1F4D3A;border-radius:12px;padding:40px;text-align:center;background:#fffaf0">Drop files here or <input type="file" id="vf" multiple accept=".mp4,.mov,.srt,.vtt,.m4a,.aac,.mp3,.wav" style="width:auto"></div>
+  <div id="queue"></div></div><div class="card"><h3>Lessons <button class="sec" onclick="vstatus()">Refresh</button></h3><div id="vlist">Loading…</div></div>`;
+  const d=$('#drop');d.ondragover=e=>{e.preventDefault();d.style.background='#e8f3ea'};d.ondragleave=()=>d.style.background='#fffaf0';
+  d.ondrop=e=>{e.preventDefault();d.style.background='#fffaf0';vqueue([...e.dataTransfer.files])};$('#vf').onchange=e=>vqueue([...e.target.files]);
+  vstatus();
+}
+async function vstatus(){
+  try{const {lessons}=await fn({action:'status'});
+  $('#vlist').innerHTML='<table><tr><th>#</th><th>Lesson</th><th>Free</th><th>Video</th><th>Captions</th><th>Audio</th></tr>'+lessons.map(l=>`<tr><td>${String(l.position).padStart(2,'0')}</td><td>${esc(l.title_en)}<br><small>${esc(l.title_zh)}</small></td><td>${l.is_preview?'✓':''}</td>
+  <td>${l.stream_uid?`<span class="tag ${/ready/.test(l.state)?'approved':'pending'}">${esc(l.state)}</span><br><small>${esc(l.stream_uid)}</small>`:'<small>—</small>'}</td><td>${esc((l.caption_langs||[]).join(', '))}</td><td>${esc((l.audio_langs||[]).join(', '))}</td></tr>`).join('')+'</table>';}catch(e){err(e)}
+}
+function vkind(name){let m;
+  if(m=name.match(/^(\d{2})_.*\.(mp4|mov)$/i))return{pos:+m[1],kind:'video'};
+  if(m=name.match(/^(\d{2})_en\.(srt|vtt)$/i))return{pos:+m[1],kind:'caption',lang:'en'};
+  if(m=name.match(/^(\d{2})(_zh)?\.(srt|vtt)$/i))return{pos:+m[1],kind:'caption',lang:'zh'};
+  if(m=name.match(/^(\d{2})_en\.(m4a|aac|mp3|wav)$/i))return{pos:+m[1],kind:'audio'};
+  return null}
+const VQ=[];
+function vqueue(files){
+  for(const f of files){const k=vkind(f.name);const row={f,k,st:k?'waiting':'skipped (name not recognised)',id:'q'+Math.random().toString(36).slice(2)};VQ.push(row)}
+  VQ.sort((a,b)=>(a.k?.kind==='video'?0:1)-(b.k?.kind==='video'?0:1));vdraw();vrun()}
+function vdraw(){const q=$('#queue');if(q)q.innerHTML='<table>'+VQ.map(r=>`<tr><td>${esc(r.f.name)}</td><td>${r.k?r.k.kind+' → lesson '+String(r.k.pos).padStart(2,'0')+(r.k.lang?' ('+r.k.lang+')':''):''}</td><td id="${r.id}">${esc(r.st)}</td></tr>`).join('')+'</table>'}
+function vset(r,t){r.st=t;const c=document.getElementById(r.id);if(c)c.textContent=t}
+const srt2vtt=t=>'WEBVTT\n\n'+t.replace(/^\uFEFF/,'').replace(/\r/g,'').replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g,'$1.$2').trim()+'\n';
+async function vrun(){
+  if(VBUSY)return;VBUSY=true;
+  try{for(;;){const r=VQ.find(x=>x.k&&x.st==='waiting');if(!r)break;
+    try{
+      if(r.k.kind==='video'){await vupload(r)}
+      else if(r.k.kind==='caption'){vset(r,'uploading…');let t=await r.f.text();if(!/^\uFEFF?WEBVTT/.test(t))t=srt2vtt(t);await fn({action:'caption',position:r.k.pos,lang:r.k.lang,vtt:t});vset(r,'✅ done')}
+      else if(r.k.kind==='audio'){vset(r,'uploading audio…');const path=`${String(r.k.pos).padStart(2,'0')}/${Date.now()}-${r.f.name.replace(/[^a-zA-Z0-9._]/g,'_')}`;
+        const {error}=await sb.storage.from('stream-audio').upload(path,r.f,{contentType:r.f.type||'audio/mp4'});if(error)throw error;
+        await fn({action:'audio',position:r.k.pos,path});vset(r,'✅ sent to Stream (processing)')}
+    }catch(e){console.error(e);vset(r,'❌ '+(e.message||e))}
+  }}finally{VBUSY=false;vstatus()}
+}
+async function vupload(r){
+  const headers=await fnHeaders();
+  await new Promise((res,rej)=>{
+    const up=new tus.Upload(r.f,{endpoint:FN+'?action=tus&position='+r.k.pos,headers,chunkSize:50*1024*1024,retryDelays:[0,3000,10000,30000,60000],
+      metadata:{name:r.f.name,filetype:r.f.type},removeFingerprintOnSuccess:true,
+      onError:e=>rej(e),onProgress:(a,b)=>vset(r,'uploading '+(a/b*100).toFixed(1)+'%  ('+(a/1048576).toFixed(0)+' / '+(b/1048576).toFixed(0)+' MB)'),
+      onSuccess:async()=>{try{const uid=up.url.split('/').pop().split('?')[0];await fn({action:'attach',position:r.k.pos,uid});vset(r,'✅ uploaded, Cloudflare is processing');res()}catch(e){rej(e)}}});
+    up.findPreviousUploads().then(p=>{if(p.length){up.resumeFromPreviousUpload(p[0]);vset(r,'resuming…')}up.start()});
+  });
+}
 
 // ---------- orders ----------
 async function orders(){
