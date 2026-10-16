@@ -57,6 +57,7 @@ async function verify(){const {error}=await sb.auth.verifyOtp({email:$('#em').va
 let P=[];
 async function products(){
   const {data,error}=await sb.from('products').select('*').order('name_en');if(error)return err(error);P=data;
+  {const {data:cs}=await sb.from('courses').select('id,title_en');window.COURSES=cs||[];}
   app.innerHTML=`<p><button onclick="editProduct()">+ New product</button></p><table><tr><th></th><th>SKU</th><th>Name</th><th>Price</th><th>Stock</th><th>Ships to</th><th>Active</th><th></th></tr>`+
   data.map(p=>`<tr><td>${(p.images?.[0]||p.image_url)?`<img class="th" src="${esc(p.images?.[0]||p.image_url)}">`:''}</td><td>${esc(p.sku)}</td><td>${esc(p.name_en)}<br><small>${esc(p.name_zh)}</small></td><td>${money(p.price_minor)}</td><td>${p.stock}</td><td>${esc((p.ship_regions||[]).join(', '))}</td>
   <td><input type="checkbox" style="width:auto" ${p.active?'checked':''} onchange="toggleActive('${p.id}',this.checked)"></td><td><button class="sec" onclick="editProduct('${p.id}')">Edit</button></td></tr>`).join('')+'</table>';
@@ -74,6 +75,7 @@ function editProduct(id){
   <div><label>Unit cost GBP (private, for margin)</label><input id="f_cogs" value="${p.cogs_minor!=null?(p.cogs_minor/100).toFixed(2):''}"></div>
   ${f('stock','Stock','number')}${f('weight_g','Weight (g)','number')}
   <div><label>Shipping countries (ISO codes, comma separated, e.g. GB, IE, FR, US)</label><input id="f_ship" value="${esc((p.ship_regions||[]).join(', '))}"></div>
+  <div><label>Buying this unlocks course (free)</label><select id="f_grants"><option value="">— none —</option>${(window.COURSES||[]).map(c=>`<option value="${c.id}" ${p.grants_course_id===c.id?'selected':''}>${esc(c.title_en)}</option>`).join('')}</select></div>
   <div><label>Active (visible in app)</label><input id="f_active" type="checkbox" style="width:auto" ${p.active?'checked':''}></div></div>
   <h4>Images</h4><div id="imgs"></div><input type="file" id="up" accept="image/*" multiple style="width:auto">
   <p><button onclick="saveProduct('${id||''}')">Save</button> <button class="sec" onclick="products()">Cancel</button></p></div>`;
@@ -88,7 +90,7 @@ async function saveProduct(id){
   const row={sku:v('sku'),type:v('type'),name_en:v('name_en'),name_zh:v('name_zh'),description_en:v('description_en'),description_zh:v('description_zh'),
     price_minor:Math.round(parseFloat(v('price'))*100),cogs_minor:v('cogs')?Math.round(parseFloat(v('cogs'))*100):null,
     stock:parseInt(v('stock')||'0'),weight_g:v('weight_g')?parseInt(v('weight_g')):null,currency:'GBP',
-    ship_regions:v('ship').split(/[ ,]+/).filter(Boolean).map(s=>s.toUpperCase()),active:$('#f_active').checked,images:_imgs,image_url:_imgs[0]||null};
+    ship_regions:v('ship').split(/[ ,]+/).filter(Boolean).map(s=>s.toUpperCase()),active:$('#f_active').checked,images:_imgs,image_url:_imgs[0]||null,grants_course_id:$('#f_grants').value||null};
   if(!row.sku||!row.name_en||!row.name_zh||isNaN(row.price_minor))return toast('SKU, both names and price are required');
   const {error}=id?await sb.from('products').update(row).eq('id',id):await sb.from('products').insert(row);
   if(error)return err(error);toast('Saved');products();
