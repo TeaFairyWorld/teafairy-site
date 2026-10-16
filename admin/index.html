@@ -32,7 +32,7 @@ const money=m=>'£'+(m/100).toFixed(2);
 function toast(t){const m=$('#msg');m.textContent=t;m.style.display='block';setTimeout(()=>m.style.display='none',3000)}
 function err(e){console.error(e);toast('Error: '+(e?.message||e))}
 let tab='products';
-const TABS={products:'Products',courses:'Courses',videos:'Videos',orders:'Orders',moderation:'Moderation',community:'Picks & posts'};
+const TABS={products:'Products',courses:'Courses',videos:'Videos',orders:'Orders',moderation:'Moderation',community:'Picks & posts',partners:'Partners'};
 
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
@@ -41,7 +41,7 @@ async function boot(){
   $('#who').innerHTML=esc(session.user.email)+' <button class="sec" onclick="sb.auth.signOut().then(()=>location.reload())">Sign out</button>';
   if(!p?.is_admin){app.innerHTML='<div class="card">This account is not an admin.</div>';return}
   $('#nav').innerHTML=Object.entries(TABS).map(([k,v])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${v}</button>`).join(' ');
-  ({products,courses,videos,orders,moderation,community})[tab]();
+  ({products,courses,videos,orders,moderation,community,partners})[tab]();
 }
 function go(t){tab=t;location.hash=t;boot()}
 if(TABS[location.hash.slice(1)]) tab=location.hash.slice(1);
@@ -243,5 +243,36 @@ async function newPost(){
     if(error)throw error;toast('Published');community();
   }catch(e){err(e)}finally{btn.disabled=false}
 }
+
+// ---------- Partners (KOL / influencers) + course codes ----------
+let PT=[];
+async function partners(){
+  const [{data:ps,error:e1},{data:st,error:e2},{data:codes,error:e3}]=await Promise.all([sb.from('partners').select('*').order('created_at',{ascending:false}),sb.rpc('admin_partner_stats'),sb.from('course_codes').select('*').order('created_at',{ascending:false}).limit(200)]);
+  if(e1||e2||e3)return err(e1||e2||e3);PT=ps;const S=Object.fromEntries((st||[]).map(x=>[x.partner_id,x]));
+  app.innerHTML=`<div class="card"><h3>Partner program</h3><p>Referral codes give fans a discount on <b>physical tea orders (Stripe) only</b> — never on the in-app course (Apple IAP). Share link: <code>https://teafairyworld.co.uk/r/CODE</code> (fans can also type the code in the cart). Commission = % of net order value (excl. shipping, tax and discounts); refunded orders are reversed automatically. Test-mode orders are not counted.</p>
+  <p><b>Disclosure (UK ASA / CMA rules):</b> partners must clearly label every post that promotes us: <b>#ad</b> when paid or earning commission, <b>#gifted</b> when they received free products with no other obligation — at the start of the caption, visible without clicking “more”, and spoken/on-screen in videos. Put this in every partner agreement and check their posts; no health or medical claims about tea.</p></div>
+  <div class="card"><button onclick="editPartner()">+ New partner</button> <span id="pform"></span>
+  <table><tr><th>Partner</th><th>Code</th><th>Fan / commission</th><th>Status</th><th>Clicks</th><th>Orders</th><th>Net revenue</th><th>Owed</th><th>Paid</th><th></th></tr>${ps.map(p=>{const x=S[p.id]||{};return `<tr><td><b>${esc(p.name)}</b> ${esc(p.handle)}<br><small>${esc(p.links)}</small><br><small>${esc(p.payout_notes)}</small></td><td><code>${esc(p.code)}</code></td><td>${p.fan_discount_pct}% / ${p.commission_pct}%</td><td>${esc(p.status)}</td>
+  <td>${x.clicks??0}</td><td>${x.orders??0}${x.reversed?` <small>(${x.reversed} refunded)</small>`:''}</td><td>${money(x.revenue_minor||0)}</td><td>${money(x.commission_owed_minor||0)}</td><td>${money(x.commission_paid_minor||0)}</td>
+  <td><button class="sec" onclick="editPartner('${p.id}')">Edit</button> <button class="sec" onclick="markPaid('${p.id}')">Mark owed as paid</button></td></tr>`}).join('')}</table>
+  <p>Monthly CSV <input id="csv_m" type="month" value="${new Date().toISOString().slice(0,7)}" style="width:auto"> <button class="sec" onclick="partnerCsv()">Export</button></p></div>
+  <div class="card"><h3>Course redemption codes</h3><p>Single-use codes that unlock the course free (granted on our server, not through Apple). <b>Apple risk:</b> Apple prefers its own Offer Codes for In-App Purchase content and may question custom unlock codes during review — use sparingly (partners, press, gifts), don’t sell them, and don’t mention them in the app’s marketing. Prefer Apple Offer Codes in App Store Connect once the Paid Apps agreement is active.</p>
+  <p>Generate <input id="cc_n" type="number" value="10" min="1" max="500" style="width:80px"> codes, note <input id="cc_note" placeholder="e.g. OMAR10 giveaway" style="width:220px">, expire after <input id="cc_days" type="number" placeholder="days (optional)" style="width:120px"> <button onclick="genCodes()">Generate</button></p>
+  <table><tr><th>Code</th><th>Note</th><th>Created</th><th>Expires</th><th>Redeemed</th></tr>${(codes||[]).map(c=>`<tr><td><code>${esc(c.code)}</code></td><td>${esc(c.note)}</td><td>${new Date(c.created_at).toLocaleDateString()}</td><td>${c.expires_at?new Date(c.expires_at).toLocaleDateString():''}</td><td>${c.redeemed_at?new Date(c.redeemed_at).toLocaleString():'—'}</td></tr>`).join('')}</table></div>`;
+}
+function editPartner(id){const p=PT.find(x=>x.id===id)||{fan_discount_pct:10,commission_pct:10,status:'active'};
+  $('#pform').innerHTML=`<div class="card"><p>Name <input id="pf_name" value="${esc(p.name)}"></p><p>Handle <input id="pf_handle" value="${esc(p.handle)}" placeholder="@omar"></p><p>Platform links <input id="pf_links" value="${esc(p.links)}" placeholder="TikTok / Instagram / YouTube URLs"></p>
+  <p>Referral code <input id="pf_code" value="${esc(p.code)}" placeholder="OMAR10" style="text-transform:uppercase"></p><p>Fan discount % <input id="pf_fan" type="number" value="${p.fan_discount_pct}"> Commission % of net <input id="pf_com" type="number" value="${p.commission_pct}"></p>
+  <p>Status <select id="pf_status" style="width:auto">${['active','paused','ended'].map(x=>`<option ${x===p.status?'selected':''}>${x}</option>`).join('')}</select></p><p>Payout notes <input id="pf_notes" value="${esc(p.payout_notes)}" placeholder="PayPal / bank, terms…"></p>
+  <p><button onclick="savePartner(${id?`'${id}'`:'null'})">Save</button></p></div>`}
+async function savePartner(id){const row={name:$('#pf_name').value.trim(),handle:$('#pf_handle').value.trim()||null,links:$('#pf_links').value.trim()||null,code:$('#pf_code').value.trim().toUpperCase(),fan_discount_pct:+$('#pf_fan').value,commission_pct:+$('#pf_com').value,status:$('#pf_status').value,payout_notes:$('#pf_notes').value.trim()||null};
+  const q=id?sb.from('partners').update(row).eq('id',id):sb.from('partners').insert(row);const {error}=await q;error?err(error):(toast('Saved'),partners())}
+async function markPaid(id){if(!confirm('Mark all owed commission for this partner as paid?'))return;const {error}=await sb.from('partner_commissions').update({status:'paid',paid_at:new Date().toISOString()}).eq('partner_id',id).eq('status','owed').eq('is_test',false);error?err(error):(toast('Done'),partners())}
+async function partnerCsv(){const m=$('#csv_m').value,start=m+'-01',end=new Date(Date.UTC(+m.slice(0,4),+m.slice(5,7),1)).toISOString();
+  const {data,error}=await sb.from('partner_commissions').select('created_at,status,net_minor,commission_minor,currency,is_test,paid_at,partners(name,code),orders(stripe_session_id,referral_code)').gte('created_at',start).lt('created_at',end).order('created_at');if(error)return err(error);
+  const rows=[['date','partner','code','order','net','commission','currency','status','paid_at','test']].concat(data.map(r=>[r.created_at,r.partners?.name,r.partners?.code,r.orders?.stripe_session_id,(r.net_minor/100).toFixed(2),(r.commission_minor/100).toFixed(2),r.currency,r.status,r.paid_at||'',r.is_test]));
+  const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`partner-commissions-${m}.csv`;a.click()}
+async function genCodes(){const {data,error}=await sb.rpc('admin_generate_course_codes',{n:+$('#cc_n').value,note:$('#cc_note').value||null,days:$('#cc_days').value?+$('#cc_days').value:null});if(error)return err(error);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['code\n'+data.join('\n')],{type:'text/csv'}));a.download='course-codes.csv';a.click();toast(data.length+' codes generated');partners()}
 sb.auth.onAuthStateChange(()=>{});boot();
 </script></body></html>
