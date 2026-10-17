@@ -99,7 +99,7 @@ async function saveProduct(id){
 
 // ---------- courses ----------
 async function courses(){
-  const {data,error}=await sb.from('courses').select('*, course_lessons(*)').order('title_en');if(error)return err(error);
+  const {data,error}=await sb.from('courses').select('*, course_lessons(*)').order('sort_order').order('title_en');if(error)return err(error);
   app.innerHTML=data.map(c=>`<div class="card"><div class="grid">
    <div><label>Title (English)</label><input id="c_${c.id}_title_en" value="${esc(c.title_en)}"></div><div><label>Title (中文)</label><input id="c_${c.id}_title_zh" value="${esc(c.title_zh)}"></div>
    <div><label>Description (English)</label><textarea id="c_${c.id}_description_en">${esc(c.description_en)}</textarea></div><div><label>Description (中文)</label><textarea id="c_${c.id}_description_zh">${esc(c.description_zh)}</textarea></div>
@@ -119,11 +119,16 @@ async function addLesson(cid,pos){const {error}=await sb.from('course_lessons').
 // ---------- videos (Cloudflare Stream) ----------
 const FN=SB_URL+'/functions/v1/stream-admin';
 async function fnHeaders(){const {data:{session}}=await sb.auth.getSession();return {Authorization:'Bearer '+session.access_token,apikey:SB_ANON}}
-async function fn(body){const r=await fetch(FN,{method:'POST',headers:{...await fnHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok||j.error)throw new Error(j.error||r.status);return j}
+async function fn(body){const r=await fetch(FN,{method:'POST',headers:{...await fnHeaders(),'Content-Type':'application/json'},body:JSON.stringify({course:VCOURSE,...body})});const j=await r.json();if(!r.ok||j.error)throw new Error(j.error||r.status);return j}
 let VBUSY=false;
+let VCOURSE=localStorage.getItem('vcourse')||'com.teafairy.teatok.course.sixteas';
+function setVCourse(v){if(VBUSY){toast('Wait until the current upload finishes');$('#vcourse').value=VCOURSE;return}VCOURSE=v;localStorage.setItem('vcourse',v);VQ.length=0;videos()}
 async function videos(){
-  app.innerHTML=`<div class="card"><h3>Course videos → Cloudflare Stream</h3>
-  <p>Drag the <b>.mp4</b> files from <b>D:\\tea_subs\\app_en</b> into the box (you can drop them all at once). The number at the start of the file name picks the lesson: <code>NN_title_EN.mp4</code> → lesson NN (00 = trailer).</p>
+  const {data:cs}=await sb.from('courses').select('id,title_en,title_zh,apple_product_id,status').order('sort_order').order('title_en');
+  if(cs&&cs.length&&!cs.some(c=>c.apple_product_id===VCOURSE))VCOURSE=cs[0].apple_product_id;
+  const sel=`<p><label>Course</label><select id="vcourse" onchange="setVCourse(this.value)" style="width:auto">${(cs||[]).map(c=>`<option value="${esc(c.apple_product_id)}" ${c.apple_product_id===VCOURSE?'selected':''}>${esc(c.title_en)} · ${esc(c.title_zh)}${c.status==='draft'?' (draft)':''}</option>`).join('')}</select></p>`;
+  app.innerHTML=`<div class="card"><h3>Course videos → Cloudflare Stream</h3>${sel}
+  <p>Pick the course above, then drag its <b>.mp4</b> files into the box (you can drop them all at once). The number at the start of the file name picks the lesson: <code>NN_title_EN.mp4</code> → lesson NN (00 = trailer).</p>
   <p>No .srt or .m4a files are needed: the subtitles are burned into the picture. Videos upload one at a time; keep this tab open until each says ✅. If one fails or gets stuck, reload this page and drop that file again; it starts over cleanly and replaces the earlier attempt.</p>
   <div id="drop" style="border:3px dashed #1F4D3A;border-radius:12px;padding:40px;text-align:center;background:#fffaf0">Drop files here or <input type="file" id="vf" multiple accept=".mp4,.mov,.srt,.vtt,.m4a,.aac,.mp3,.wav" style="width:auto"></div>
   <div id="queue"></div></div><div class="card"><h3>Lessons <button class="sec" onclick="vstatus()">Refresh</button></h3><div id="vlist">Loading…</div></div>`;
@@ -132,7 +137,10 @@ async function videos(){
   vstatus();
 }
 async function vstatus(){
-  try{const {lessons}=await fn({action:'status'});
+  try{const res=await fn({action:'status'});const {lessons}=res;
+  // An older stream-admin ignores the course and always answers for the original course: block uploads then.
+  window.VOK=!!res.course_id||VCOURSE==='com.teafairy.teatok.course.sixteas';
+  if(!window.VOK){$('#vlist').innerHTML='<p class="tag pending">The stream-admin function on the server is the old single-course version. Deploy the updated function before uploading videos for this course.</p>';return}
   $('#vlist').innerHTML='<table><tr><th>#</th><th>Lesson</th><th>Free</th><th>Video</th><th>Captions</th><th>Audio</th></tr>'+lessons.map(l=>`<tr><td>${String(l.position).padStart(2,'0')}</td><td>${esc(l.title_en)}<br><small>${esc(l.title_zh)}</small></td><td>${l.is_preview?'✓':''}</td>
   <td>${l.stream_uid?`<span class="tag ${/ready/.test(l.state)?'approved':'pending'}">${esc(l.state)}</span><br><small>${esc(l.stream_uid)}</small>`:'<small>—</small>'}</td><td>${esc((l.caption_langs||[]).join(', '))}</td><td>${esc((l.audio_langs||[]).join(', '))}</td></tr>`).join('')+'</table>';}catch(e){err(e)}
 }
@@ -144,6 +152,7 @@ function vkind(name){let m;
   return null}
 const VQ=[];
 function vqueue(files){
+  if(window.VOK===false){toast('Update the stream-admin function first');return}
   for(const f of files){const k=vkind(f.name);const row={f,k,st:k?'waiting':'skipped (name not recognised)',id:'q'+Math.random().toString(36).slice(2)};VQ.push(row)}
   VQ.sort((a,b)=>(a.k?.kind==='video'?0:1)-(b.k?.kind==='video'?0:1));vdraw();vrun()}
 function vdraw(){const q=$('#queue');if(q)q.innerHTML='<table>'+VQ.map(r=>`<tr><td>${esc(r.f.name)}</td><td>${r.k?r.k.kind+' → lesson '+String(r.k.pos).padStart(2,'0')+(r.k.lang?' ('+r.k.lang+')':''):''}</td><td id="${r.id}">${esc(r.st)}</td></tr>`).join('')+'</table>'}
@@ -166,7 +175,7 @@ async function vupload(r){
   await new Promise((res,rej)=>{
     // Supabase auth headers go ONLY to our function (creation POST). Sending them to Cloudflare's
     // upload URL breaks the CORS preflight (apikey/Authorization not allowed) and stalls at 0%.
-    const up=new tus.Upload(r.f,{endpoint:FN+'?action=tus&position='+r.k.pos,chunkSize:50*1024*1024,retryDelays:[0,3000,10000,30000],
+    const up=new tus.Upload(r.f,{endpoint:FN+'?action=tus&position='+r.k.pos+'&course='+encodeURIComponent(VCOURSE),chunkSize:50*1024*1024,retryDelays:[0,3000,10000,30000],
       metadata:{filetype:r.f.type||'video/mp4'},storeFingerprintForResuming:false,
       onBeforeRequest:req=>{if(req.getURL().startsWith(FN))for(const [k,v] of Object.entries(headers))req.setHeader(k,v)},
       onError:e=>rej(e),onProgress:(a,b)=>vset(r,'uploading '+(a/b*100).toFixed(1)+'%  ('+(a/1048576).toFixed(0)+' / '+(b/1048576).toFixed(0)+' MB)'),
