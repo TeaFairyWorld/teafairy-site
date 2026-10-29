@@ -1,2 +1,2 @@
-# Tea Fairy / TEAFAIRY LIMITED website
+# TeaFairy / TEAFAIRY LIMITED website
 Static site. Legal pages: privacy, terms, refunds, community guidelines.

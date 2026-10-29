@@ -217,7 +217,7 @@ async function moderation(){
 async function mod(t,id,a){const {error}=await sb.rpc('admin_moderate',{t,target:id,action:a});error?err(error):(toast('Done'),moderation())}
 async function ban(uid,b){if(!confirm(b?'Ban this user and hide all their posts?':'Unban this user?'))return;const {error}=await sb.rpc('admin_set_ban',{target:uid,ban:b});error?err(error):(toast('Done'),moderation())}
 
-// ---------- Tea Fairy's Picks & official posts ----------
+// ---------- TeaFairy's Picks & official posts ----------
 const thisMonth=()=>new Date().toISOString().slice(0,7);
 async function community(){
   const [{data:acc,error:e1},{data:posts,error:e2}]=await Promise.all([sb.rpc('admin_official_accounts'),
@@ -225,7 +225,7 @@ async function community(){
   if(e1||e2)return err(e1||e2);
   const official=acc||[];
   const rows=[];for(const r of posts){let u=null;if(r.photo_paths?.[0]){const {data:x}=await sb.storage.from('checkin-photos').createSignedUrl(r.photo_paths[0],600);u=x?.signedUrl}rows.push({...r,u})}
-  app.innerHTML=`<div class="card"><h3>Tea Fairy's Picks</h3><p>An <b>editorial selection</b> by our team — never call it a contest, competition or prize draw. Picks for the latest month show on the app's Today tab; the author sees a “Tea Fairy's Pick” note on their check-in.</p></div>
+  app.innerHTML=`<div class="card"><h3>TeaFairy's Picks</h3><p>An <b>editorial selection</b> by our team — never call it a contest, competition or prize draw. Picks for the latest month show on the app's Today tab; the author sees a “TeaFairy's Pick” note on their check-in.</p></div>
   <div class="card"><h3>Official account</h3><p>Shown in the app with an “Official” badge and can be posted for from here. It must have signed in to the app once. Team members simply use the app as normal users.</p>
   <table><tr><th>Email</th><th>Name</th><th></th></tr>${(acc||[]).map(a=>`<tr><td>${esc(a.email)}</td><td>${esc(a.nickname)}</td><td><button class="sec" onclick="setRole('${esc(a.email)}','')">Remove</button></td></tr>`).join('')}</table>
   <p><input id="ra_em" placeholder="email" style="width:260px"> <input id="ra_nick" placeholder="display name (optional)" style="width:200px"> <button onclick="setRole($('#ra_em').value,'official',$('#ra_nick').value)">Save</button></p></div>
@@ -233,7 +233,7 @@ async function community(){
   <p>Caption</p><textarea id="np_text" maxlength="500" rows="3" style="width:100%"></textarea>
   <p>Photos (up to 3) <input id="np_photos" type="file" accept="image/*" multiple></p>
   <p>…or short video (MP4/MOV, max 50 MB, ~60 s) <input id="np_video" type="file" accept="video/mp4,video/quicktime"> or Cloudflare Stream UID <input id="np_stream" style="width:300px"></p>
-  <p><label><input id="np_pick" type="checkbox" style="width:auto"> Mark as Tea Fairy's Pick for</label> <input id="np_month" type="month" value="${thisMonth()}" style="width:auto"> note <input id="np_note" placeholder="optional reward / thank-you note" style="width:260px"></p>
+  <p><label><input id="np_pick" type="checkbox" style="width:auto"> Mark as TeaFairy's Pick for</label> <input id="np_month" type="month" value="${thisMonth()}" style="width:auto"> note <input id="np_note" placeholder="optional reward / thank-you note" style="width:260px"></p>
   <p><button id="np_btn" onclick="newPost()">Publish</button></p>`:'<p>Add the official account above first.</p>'}</div>
   <div class="card"><h3>Public check-ins</h3><table><tr><th></th><th>Author</th><th>Caption</th><th>Pick</th></tr>${rows.map(r=>`<tr><td>${r.u?`<img class="th" src="${r.u}">`:r.stream_uid||r.video_path?'🎬':''}</td>
   <td>${esc(r.author_name||r.user_id.slice(0,8))} ${r.author_badge?'<span class="tag approved">official</span>':''}<br><small>${new Date(r.created_at).toLocaleDateString()}</small></td><td>${esc(r.text)}</td>
