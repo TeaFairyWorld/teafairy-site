@@ -29,3 +29,32 @@ blockquote{border-left:4px solid var(--gold);margin:16px 0;padding:6px 16px;colo
 .product h3 small{font-weight:normal;opacity:.75}
 .stats .card{position:relative;overflow:hidden;isolation:isolate;min-height:120px;display:flex;flex-direction:column;justify-content:center}
 .stats .card::before{content:"";position:absolute;inset:0;background:url(images/badge-watermark.png) center/auto 80% no-repeat;opacity:.15;z-index:-1;pointer-events:none}
+
+.skip{position:absolute;left:-999px;background:#fff;color:var(--ink);padding:8px 12px;z-index:2}
+.skip:focus{left:12px;top:12px}
+html[lang="zh-Hans"] body{font-family:"Noto Serif CJK SC","Source Han Serif SC","Songti SC","STSong",PMingLiU,Georgia,"Times New Roman",serif}
+.zh{display:none}
+html[lang="zh-Hans"] .en{display:none}
+html[lang="zh-Hans"] .zh{display:revert}
+.redeem-hero img{width:72px;height:72px}
+.lang-switch{display:flex;gap:8px;justify-content:center;margin:0}
+.lang-switch button{background:transparent;border:1px solid #e6dfcf;color:var(--ink);font:inherit;padding:4px 12px;border-radius:6px;cursor:pointer}
+.lang-switch button[aria-pressed="true"]{background:var(--tea);color:#fff;border-color:var(--tea)}
+.redeem-logos{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:16px 28px;margin:0 auto 12px;max-width:100%}
+.redeem-mark{width:72px;height:72px;display:block;margin:0}
+.cbbc-logo{width:min(100%,420px);height:auto;display:block}
+.redeem .panel,.redeem form{background:#fff;border:1px solid #e6dfcf;border-radius:10px;padding:22px}
+.redeem h2{margin:18px 0 8px}
+.redeem label{display:block;margin-top:12px}
+.redeem input,.redeem select,.redeem textarea{width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid #d9d0bc;border-radius:6px;background:#fff;color:var(--ink)}
+.redeem input[type="checkbox"]{width:auto}
+.redeem .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.redeem .hint{font-size:.92em;color:#666;margin:6px 0}
+.redeem .field-error{color:#8a3b2a;margin:4px 0 0}
+.redeem .consent{display:flex;gap:10px;align-items:flex-start}
+.redeem .consent label{margin-top:0}
+button.btn{border:0;font:inherit;cursor:pointer}
+button.btn:disabled{opacity:.65;cursor:wait}
+.confirm-ref{font-size:1.2em}
+.redeem :focus-visible,.lang-switch button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media(max-width:700px){.redeem .row{grid-template-columns:1fr}.cbbc-logo{width:min(100%,280px)}}
