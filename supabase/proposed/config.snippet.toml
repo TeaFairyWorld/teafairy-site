@@ -1,0 +1,7 @@
+# Merge into the gift project's config when a human deploys.
+# This repository is not linked, and this snippet does not deploy anything.
+# verify_jwt is false so gift-submit can apply its own arming switch.
+# The function still requires the project's anon key and GIFT_SUBMIT_ACTIVE=true.
+
+[functions.gift-submit]
+verify_jwt = false

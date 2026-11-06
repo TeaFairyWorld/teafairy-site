@@ -1,12 +1,16 @@
 # TeaFairy / TEAFAIRY LIMITED website
 Static site. Legal pages: privacy, terms, refunds, community guidelines.
 
-Gift form: `redeem.html` (nav: Gift). It posts to the existing Supabase project only after `gift-submit` is deployed. Until then the page says the address was not saved. Nothing in this repository is deployed by itself.
+## Gift redemption
 
-## Gift storage (needs owner approval)
+`redeem.html` (nav: Gift) is the interview thank-you form: 20 separate standard gifts and one standalone grand prize. The grand prize does not include a standard gift. The form is switched off. `js/gift-config.js` sets `submissionsEnabled` to `false`, so the page does not send or store an address and does not show a success receipt.
 
-Do not run these against production until you mean to.
+When a human later switches it on, the only gift endpoint is:
 
-1. In the Supabase SQL editor for project `lqghuvaazdnqzkbagbay`, run `supabase/migrations/20261106124500_gift_submissions.sql`.
-2. Copy `supabase/functions/gift-submit` into the Supabase functions (teatok was not accessible from this environment) and deploy it with `verify_jwt = false`. The function uses the injected `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. It does not send email.
-3. Publish this website only after step 2. Then open the table `gift_submissions` in the Supabase dashboard to read reference codes and addresses. The anon key cannot read that table.
+`https://tkxepmevhhzfmorbhriz.supabase.co/functions/v1/gift-submit`
+
+That is project `tkxepmevhhzfmorbhriz` (UK, `eu-west-2`). The request body is `{code, recipient_name, phone, email, address1, address2, city, postcode, country, consent}`. The browser sends the code itself. It does not send a gift id or a hash. A success receipt is only `{confirmation_id, tier}`.
+
+The earlier plaintext `gift_save_submission` draft (`20261106124500_gift_submissions.sql`) is withdrawn and removed. Do not recreate it. The reviewed replacement is `supabase/migrations/20261106150000_gift_redeem.sql` and `supabase/functions/gift-submit/`. It has not been applied or deployed. Steps, the test-only batch, and the owner-only code export are in `supabase/proposed/README.md`.
+
+Nothing in this repository deploys itself. Do not commit voucher codes, `VOUCHER_PEPPER`, the service-role key, `supabase/.env`, or real addresses.
