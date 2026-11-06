@@ -88,7 +88,15 @@ test("secret file is ignored and the example has no pepper", () => {
   assert.match(handler, /tkxepmevhhzfmorbhriz/);
 });
 
-test("approved logo file is unchanged", () => {
-  const logo = fs.statSync(path.join(root, "images/cbbc-approved-logo.png"));
-  assert.equal(logo.size, 73249);
+test("gift logos put the trade-association mark first and keep a transparent cutout", () => {
+  const page = read("redeem.html");
+  const block = page.slice(page.indexOf("redeem-logos"), page.indexOf("</div>", page.indexOf("redeem-logos")));
+  const sources = [...block.matchAll(/src="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(sources, ["images/cbbc-approved-logo.png", "images/logo.png"]);
+  assert.match(page, /<header><nav><a class="brand" href="index.html"><img src="images\/logo.png"/);
+  const logo = fs.readFileSync(path.join(root, "images/cbbc-approved-logo.png"));
+  assert.equal(logo.toString("ascii", 12, 16), "IHDR");
+  assert.equal(logo.readUInt32BE(16), 421);
+  assert.equal(logo.readUInt32BE(20), 109);
+  assert.equal(logo[25], 6);
 });

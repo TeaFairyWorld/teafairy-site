@@ -139,8 +139,8 @@ test("local gift page shows the closed bilingual form and does not submit", { ti
           success: document.getElementById('gift-success').hidden,
           invalid: document.getElementById('gift-invalid').hidden,
           grandIntro: document.body.textContent.includes('大奖不包含标准礼物'),
-          tea: document.querySelector('img.redeem-mark').getAttribute('src'),
-          cbbc: document.querySelector('img.cbbc-logo').getAttribute('src'),
+          logos: [...document.querySelectorAll('.redeem-logos img')].map((img) => img.getAttribute('src')),
+          brand: document.querySelector('header .brand img').getAttribute('src'),
           button: document.getElementById('submit').textContent,
           closed: document.getElementById('gift-fields-set').disabled,
           fetches: window.__fetches,
@@ -158,8 +158,8 @@ test("local gift page shows the closed bilingual form and does not submit", { ti
     assert.equal(value.success, true);
     assert.equal(value.invalid, true);
     assert.equal(value.grandIntro, true);
-    assert.equal(value.tea, "images/logo.png");
-    assert.equal(value.cbbc, "images/cbbc-approved-logo.png");
+    assert.deepEqual(value.logos, ["images/cbbc-approved-logo.png", "images/logo.png"]);
+    assert.equal(value.brand, "images/logo.png");
     assert.match(value.button, /尚未开放/);
     assert.equal(value.closed, true);
     assert.deepEqual(value.fetches, []);
