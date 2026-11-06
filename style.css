@@ -40,7 +40,9 @@ html[lang="zh-Hans"] .zh{display:revert}
 .lang-switch{display:flex;gap:8px;justify-content:center;margin:0}
 .lang-switch button{background:transparent;border:1px solid #e6dfcf;color:var(--ink);font:inherit;padding:4px 12px;border-radius:6px;cursor:pointer}
 .lang-switch button[aria-pressed="true"]{background:var(--tea);color:#fff;border-color:var(--tea)}
-.redeem-mark{width:72px;height:72px;display:block;margin:0 auto 8px}
+.redeem-logos{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:16px 28px;margin:0 auto 12px;max-width:100%}
+.redeem-mark{width:72px;height:72px;display:block;margin:0}
+.cbbc-logo{width:min(100%,420px);height:auto;display:block}
 .redeem .panel,.redeem form{background:#fff;border:1px solid #e6dfcf;border-radius:10px;padding:22px}
 .redeem h2{margin:18px 0 8px}
 .redeem label{display:block;margin-top:12px}
@@ -55,4 +57,4 @@ button.btn{border:0;font:inherit;cursor:pointer}
 button.btn:disabled{opacity:.65;cursor:wait}
 .confirm-ref{font-size:1.2em}
 .redeem :focus-visible,.lang-switch button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-@media(max-width:700px){.redeem .row{grid-template-columns:1fr}}
+@media(max-width:700px){.redeem .row{grid-template-columns:1fr}.cbbc-logo{width:min(100%,280px)}}
