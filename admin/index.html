@@ -21,7 +21,6 @@ img.th{width:56px;height:56px;object-fit:cover;border-radius:6px;margin:2px}
 </style></head><body>
 <header><b>🍵 TeaFairy World Admin</b><span id="nav"></span><span id="who"></span></header>
 <main id="app">Loading…</main><div id="msg"></div>
-<script src="gift-panel.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4.2.3/dist/tus.min.js"></script>
 <script>
@@ -33,7 +32,7 @@ const money=m=>'£'+(m/100).toFixed(2);
 function toast(t){const m=$('#msg');m.textContent=t;m.style.display='block';setTimeout(()=>m.style.display='none',3000)}
 function err(e){console.error(e);toast('Error: '+(e?.message||e))}
 let tab='products';
-const TABS={products:'Products',courses:'Courses',videos:'Videos',orders:'Orders',moderation:'Moderation',community:'Picks & posts',partners:'Partners',gifts:'Gifts'};
+const TABS={products:'Products',courses:'Courses',videos:'Videos',orders:'Orders',moderation:'Moderation',community:'Picks & posts',partners:'Partners'};
 
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
@@ -42,7 +41,7 @@ async function boot(){
   $('#who').innerHTML=esc(session.user.email)+' <button class="sec" onclick="sb.auth.signOut().then(()=>location.reload())">Sign out</button>';
   if(!p?.is_admin){app.innerHTML='<div class="card">This account is not an admin.</div>';return}
   $('#nav').innerHTML=Object.entries(TABS).map(([k,v])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')">${v}</button>`).join(' ');
-  ({products,courses,videos,orders,moderation,community,partners,gifts})[tab]();
+  ({products,courses,videos,orders,moderation,community,partners})[tab]();
 }
 function go(t){tab=t;location.hash=t;boot()}
 if(TABS[location.hash.slice(1)]) tab=location.hash.slice(1);
@@ -285,15 +284,5 @@ async function partnerCsv(){const m=$('#csv_m').value,start=m+'-01',end=new Date
   const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`partner-commissions-${m}.csv`;a.click()}
 async function genCodes(){const {data,error}=await sb.rpc('admin_generate_course_codes',{n:+$('#cc_n').value,note:$('#cc_note').value||null,days:$('#cc_days').value?+$('#cc_days').value:null});if(error)return err(error);
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['code\n'+data.join('\n')],{type:'text/csv'}));a.download='course-codes.csv';a.click();toast(data.length+' codes generated');partners()}
-async function gifts(){
-  if(!window.TeaFairyGifts){app.innerHTML='<div class="card">Gift panel failed to load.</div>';return}
-  TeaFairyGifts.mount(app,{esc,async call(body){
-    const headers=await fnHeaders();
-    const r=await fetch(SB_URL+'/functions/v1/gift-admin',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const j=await r.json().catch(()=>({error:'bad_response'}));
-    if(!r.ok||j.ok===false)throw new Error(j.error||('HTTP '+r.status));
-    return j;
-  }});
-}
 sb.auth.onAuthStateChange(()=>{});boot();
 </script></body></html>
