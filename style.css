@@ -56,6 +56,7 @@ html[lang="zh-Hans"] .zh{display:revert}
 button.btn{border:0;font:inherit;cursor:pointer}
 button.btn:disabled{opacity:.65;cursor:not-allowed}
 .redeem .notice{margin:16px 0}
+.redeem .hp{display:none}
 .redeem fieldset{border:0;margin:0;padding:0;min-inline-size:0}
 .redeem input:disabled,.redeem select:disabled,.redeem button:disabled{background:#f3f0e8}
 .confirm-ref{font-size:1.2em}
