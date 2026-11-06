@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "dev:gift": "node --experimental-strip-types scripts/dev-gift-server.mjs"
+  },
+  "devDependencies": {
+    "pg": "^8.16.3",
+    "playwright": "^1.65.0"
+  }
+}

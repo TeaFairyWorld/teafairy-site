@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Redeem your gift | TeaFairy · TEAFAIRY LIMITED</title>
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="Redeem one TeaFairy thank-you gift with the one-time code your organiser gave you.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' https://lqghuvaazdnqzkbagbay.supabase.co; form-action 'none'; base-uri 'self'; object-src 'none'">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#redeem-form">Skip to the redemption form</a>
+<header><nav><a class="brand" href="index.html"><img src="images/logo.png" alt="" width="52" height="52">TeaFairy 茶仙子</a><a href="index.html">Home</a><a href="about.html">About</a><a href="products.html">Our Teas</a><a href="support.html">Support</a><a href="contact.html">Contact</a><a href="redeem.html" aria-current="page">Gift</a></nav></header>
+<main class="redeem">
+<p class="lang-switch">
+<button type="button" id="lang-en" aria-pressed="true">English</button>
+<button type="button" id="lang-zh" aria-pressed="false">中文</button>
+</p>
+<img class="redeem-mark" src="images/logo.png" alt="TeaFairy 茶仙子" width="72" height="72">
+<h1><span class="en">Redeem your gift</span><span class="zh">领取礼物</span></h1>
+<p class="en">TeaFairy is sending one of 20 thank-you gifts to people who already have a one-time gift code. Research materials describe the connected study of Chinese postgraduate employment as supported by the China-Britain Business Council (英中贸易协会) and conducted by Pippa Ebel and the CBBC research team. This is TeaFairy’s page. It is not a CBBC page, and it does not carry CBBC’s endorsement. Not everyone who takes part receives a gift. No purchase is required.</p>
+<p class="zh">TeaFairy 向已经拿到一次性兑换码的 20 人寄出致谢礼物。研究材料说明，相关的中国研究生就业研究由英中贸易协会（China-Britain Business Council）支持，由 Pippa Ebel 与 CBBC 研究团队开展。本页属于 TeaFairy，不是英中贸易协会的页面，也不表示其背书。参加研究本身并不表示一定会收到礼物。无需购买。</p>
+<p id="closed-note" class="notice" hidden></p>
+<p id="offline-note" class="notice" hidden></p>
+
+<div id="success" class="panel" hidden tabindex="-1">
+<h2 id="success-title"></h2>
+<p id="success-body"></p>
+<p class="confirm-ref"><span class="en">Confirmation reference</span><span class="zh">确认编号</span><br><strong id="ref"></strong></p>
+</div>
+
+<div id="form-wrap">
+<form id="redeem-form" method="post" action="redeem.html" novalidate>
+<h2><span class="en">Enter your gift code</span><span class="zh">输入兑换码</span></h2>
+<label for="code"><span class="en">Gift code</span><span class="zh">兑换码</span></label>
+<input id="code" name="code" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="64" required aria-describedby="code-help">
+<p id="code-help" class="hint"><span class="en">The code is sent only when you submit. It is not put in the page address.</span><span class="zh">兑换码只在提交时送出，不会出现在网址里。</span></p>
+
+<h2><span class="en">Delivery details</span><span class="zh">收货地址</span></h2>
+<div id="form-error" role="alert" tabindex="-1" hidden></div>
+<label for="recipient_name"><span class="en">Recipient name</span><span class="zh">收件人姓名</span></label>
+<input id="recipient_name" name="recipient_name" type="text" autocomplete="shipping name" maxlength="100" required>
+<label for="phone"><span class="en">Phone</span><span class="zh">电话</span></label>
+<input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="24" inputmode="tel" required>
+<label for="address_line1"><span class="en">Address line 1</span><span class="zh">地址第一行</span></label>
+<input id="address_line1" name="address_line1" type="text" autocomplete="address-line1" maxlength="120" required>
+<label for="address_line2"><span class="en">Address line 2 (optional)</span><span class="zh">地址第二行（可选）</span></label>
+<input id="address_line2" name="address_line2" type="text" autocomplete="address-line2" maxlength="120">
+<div class="row">
+<div>
+<label for="city"><span class="en">City</span><span class="zh">城市</span></label>
+<input id="city" name="city" type="text" autocomplete="address-level2" maxlength="80" required>
+</div>
+<div>
+<label for="postcode"><span class="en">Postcode</span><span class="zh">邮编</span></label>
+<input id="postcode" name="postcode" type="text" autocomplete="postal-code" maxlength="16" required>
+</div>
+</div>
+<label for="country"><span class="en">Country</span><span class="zh">国家或地区</span></label>
+<select id="country" name="country" autocomplete="country" required>
+<option value="GB" selected>United Kingdom / 英国</option>
+</select>
+<p class="consent">
+<input id="consent" name="consent" type="checkbox" value="yes">
+<label for="consent"><span class="en">I agree that TeaFairy may use these details only to fulfil this gift and to contact me about its delivery.</span><span class="zh">我同意 TeaFairy 仅将这些信息用于寄送这份礼物，以及与配送有关的联系。</span></label>
+</p>
+<p><a href="privacy.html#gift-thank-you"><span class="en">Privacy notice</span><span class="zh">隐私说明</span></a></p>
+<button class="btn" id="submit" type="submit" disabled><span class="en">Submit my delivery details</span><span class="zh">提交收货信息</span></button>
+</form>
+</div>
+<noscript><p class="notice">This form needs JavaScript so your code and address are not placed in the page address. / 此表单需要 JavaScript，以免兑换码和地址进入网址。</p></noscript>
+</main>
+<footer>&copy; 2026 TEAFAIRY LIMITED &middot; Registered in England &amp; Wales, company number 17464103<br>Registered office: TEAFAIRY LIMITED, 3 Cardinal Mansions, Carlisle Place, London, SW1P 1EY, United Kingdom<br><a href="privacy.html">Privacy Policy</a> &middot; <a href="terms.html">Terms of Use / EULA</a> &middot; <a href="community-guidelines.html">Community Guidelines</a> &middot; <a href="refunds.html">Refunds &amp; Returns</a> &middot; <a href="support.html">Support</a> &middot; <a href="contact.html">Contact</a></footer>
+<script src="redeem.js"></script>
+</body>
+</html>
