@@ -96,6 +96,12 @@ test("gift logos put the trade-association mark first", () => {
   assert.match(page, /<header><nav><a class="brand" href="index.html"><img src="images\/logo.png"/);
   const logo = fs.readFileSync(path.join(root, "images/cbbc-approved-logo.png"));
   assert.equal(logo.toString("ascii", 12, 16), "IHDR");
-  assert.equal(logo.readUInt32BE(16), 753);
-  assert.equal(logo.readUInt32BE(20), 315);
+  assert.equal(logo.readUInt32BE(16), 972);
+  assert.equal(logo.readUInt32BE(20), 241);
+  assert.equal(logo[25], 6);
+  const notice = read("images/cbbc-logo-source.txt");
+  assert.match(notice, /https:\/\/www\.cbbc\.org\/themes\/custom\/cbbc\/assets\/images\/logos\/CBBC_logo\.svg/);
+  assert.match(notice, /web\.archive\.org/);
+  assert.match(page, /does not carry CBBC/);
+  assert.match(read("js/gift-config.js"), /submissionsEnabled:\s*false/);
 });

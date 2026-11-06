@@ -1,0 +1,9 @@
+China-Britain Business Council wordmark on the gift page.
+
+Original: https://www.cbbc.org/themes/custom/cbbc/assets/images/logos/CBBC_logo.svg
+Retrieved through the Internet Archive because a direct request returned 403:
+https://web.archive.org/web/2024/https://www.cbbc.org/themes/custom/cbbc/assets/images/logos/CBBC_logo.svg
+
+images/cbbc-approved-logo.png is that SVG rendered to a 972 by 241 PNG with the file’s own transparency. The pixels were not redrawn or recolored.
+
+Showing the mark does not mean the China-Britain Business Council endorses this page.
