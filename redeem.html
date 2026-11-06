@@ -28,12 +28,9 @@
 <h2>谢谢 / Thank you</h2>
 <p>收货信息已提交。TeaFairy 将人工核对兑换码后安排寄送。<br>Submitted. TeaFairy will check the code by hand and then arrange delivery.</p>
 </div>
-<form id="ship-form" action="https://formsubmit.co/teaworldcorp@gmail.com" method="POST">
-<input type="hidden" name="_subject" value="TeaFairy gift shipping">
-<input type="hidden" name="_template" value="table">
-<input type="hidden" name="_captcha" value="false">
-<input type="hidden" name="_next" value="https://teafairyworld.co.uk/redeem.html?sent=1">
-<input class="hp" type="text" name="_honey" tabindex="-1" autocomplete="off">
+<p id="send-fail" class="notice" hidden>Not sent. Please try again. / 未发送，请再试一次。</p>
+<form id="ship-form" action="https://submit.jotform.com/submit/263094166436057" method="POST">
+<input type="hidden" name="formID" value="263094166436057">
 <label for="name">Name / 收件人姓名</label>
 <input id="name" name="name" type="text" autocomplete="name" maxlength="100" required>
 <label for="phone">Phone / 电话</label>
@@ -63,11 +60,49 @@
 <footer>&copy; 2026 TEAFAIRY LIMITED &middot; Registered in England &amp; Wales, company number 17464103<br>Registered office: TEAFAIRY LIMITED, 3 Cardinal Mansions, Carlisle Place, London, SW1P 1EY, United Kingdom<br><a href="privacy.html">Privacy Policy</a> &middot; <a href="terms.html">Terms of Use / EULA</a> &middot; <a href="community-guidelines.html">Community Guidelines</a> &middot; <a href="refunds.html">Refunds &amp; Returns</a> &middot; <a href="support.html">Support</a> &middot; <a href="contact.html">Contact</a></footer>
 <script>
 (function () {
-  if (new URLSearchParams(location.search).get("sent") !== "1") return;
   var form = document.getElementById("ship-form");
   var thanks = document.getElementById("thanks");
-  if (form) form.hidden = true;
-  if (thanks) thanks.hidden = false;
+  var fail = document.getElementById("send-fail");
+  function done() {
+    if (form) form.hidden = true;
+    if (thanks) thanks.hidden = false;
+    if (fail) fail.hidden = true;
+  }
+  if (!form) return;
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    var button = form.querySelector("button");
+    if (button) button.disabled = true;
+    if (fail) fail.hidden = true;
+    var name = document.getElementById("name").value.trim();
+    var split = name.indexOf(" ");
+    var body = new URLSearchParams();
+    body.set("formID", "263094166436057");
+    body.set("simple_spc", "263094166436057-263094166436057");
+    body.set("q3_q3_fullname1[first]", split === -1 ? name : name.slice(0, split));
+    body.set("q3_q3_fullname1[last]", split === -1 ? "-" : name.slice(split + 1).trim());
+    body.set("q4_q4_phone2[full]", document.getElementById("phone").value.trim());
+    body.set("q5_q5_email3", document.getElementById("email").value.trim());
+    body.set("q6_q6_address4[addr_line1]", document.getElementById("street").value.trim());
+    body.set("q6_q6_address4[city]", document.getElementById("city").value.trim());
+    body.set("q6_q6_address4[postal]", document.getElementById("postcode").value.trim());
+    body.set("q6_q6_address4[country]", document.getElementById("country").value);
+    body.set("q7_q7_textbox5", document.getElementById("voucher").value.trim());
+    body.set("q8_q8_widget_TermsAndConditions6", "Accepted");
+    body.set("website", "");
+    fetch("https://submit.jotform.com/submit/263094166436057", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString()
+    }).then(function (res) {
+      if (!res.ok) throw new Error("bad");
+      done();
+    }).catch(function () {
+      if (button) button.disabled = false;
+      if (fail) fail.hidden = false;
+    });
+  });
 })();
 </script>
 </body>
