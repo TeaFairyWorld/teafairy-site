@@ -54,7 +54,11 @@ html[lang="zh-Hans"] .zh{display:revert}
 .redeem .consent{display:flex;gap:10px;align-items:flex-start}
 .redeem .consent label{margin-top:0}
 button.btn{border:0;font:inherit;cursor:pointer}
-button.btn:disabled{opacity:.65;cursor:wait}
+button.btn:disabled{opacity:.65;cursor:not-allowed}
+.redeem .notice{margin:16px 0}
+.redeem .hp{display:none}
+.redeem fieldset{border:0;margin:0;padding:0;min-inline-size:0}
+.redeem input:disabled,.redeem select:disabled,.redeem button:disabled{background:#f3f0e8}
 .confirm-ref{font-size:1.2em}
 .redeem :focus-visible,.lang-switch button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media(max-width:700px){.redeem .row{grid-template-columns:1fr}.cbbc-logo{width:min(100%,280px)}}

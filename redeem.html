@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Redeem your gift | TeaFairy · TEAFAIRY LIMITED</title>
+<title>Shipping details | TeaFairy · TEAFAIRY LIMITED</title>
 <meta name="referrer" content="no-referrer">
-<meta name="description" content="TeaFairy thank-you gift delivery form.">
+<meta name="description" content="TeaFairy gift shipping details.">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -13,57 +13,62 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<a class="skip" href="#ship-form">Skip to form</a>
 <header><nav><a class="brand" href="index.html"><img src="images/logo.png" alt="" width="52" height="52">TeaFairy 茶仙子</a><a href="index.html">Home</a><a href="about.html">About</a><a href="products.html">Our Teas</a><a href="support.html">Support</a><a href="contact.html">Contact</a><a href="redeem.html" aria-current="page">Gift</a></nav></header>
 <main class="redeem">
 <div class="redeem-logos">
+<img class="cbbc-logo" src="images/cbbc-approved-logo.png" alt="China-Britain Business Council 英中贸易协会" width="972" height="241">
 <img class="redeem-mark" src="images/logo.png" alt="TeaFairy 茶仙子" width="72" height="72">
-<img class="cbbc-logo" src="images/cbbc-approved-logo.png" alt="China-Britain Business Council 英中贸易协会" width="753" height="315">
 </div>
-<h1>Redeem your gift<br>领取礼物</h1>
-<p>TeaFairy is sending a thank-you gift to 20 people who have been given a reference code. Research materials describe the connected study of Chinese postgraduate employment as supported by the China-Britain Business Council (英中贸易协会) and conducted by Pippa Ebel and the CBBC research team. This is TeaFairy’s page, not a CBBC page, and it does not carry CBBC’s endorsement. Taking part in the study does not by itself mean a gift will be sent. No purchase is required.</p>
-<p>TeaFairy 向 20 位已获得参考编号的人士寄出致谢礼物。研究材料说明，相关的中国研究生就业研究由英中贸易协会支持，由 Pippa Ebel 与 CBBC 研究团队开展。本页属于 TeaFairy，不是英中贸易协会的页面，也不表示其背书。参加研究本身并不表示一定会收到礼物。无需购买。</p>
-<p id="not-saved" class="notice" hidden>Not saved / 尚未保存. The address was not stored. If private storage is not connected yet, nothing has been sent.</p>
-<div id="success" class="panel" hidden tabindex="-1">
-<h2>Thank you / 谢谢</h2>
-<p>TeaFairy has saved these delivery details for the gift. This page will not show them again.</p>
-<p>谢谢。这些收货信息已保存，仅用于寄送礼物。本页不会再次显示。</p>
+<h1>礼品收货信息<br>Shipping details</h1>
+<p>输入组织方提供的兑换码并填写收货信息。TeaFairy 人工核对后安排寄送。<br>Enter the code given by the organiser and your shipping details. TeaFairy will check the code by hand, then arrange delivery.</p>
+<p>TeaFairy is sending 20 separate standard gifts and one standalone grand prize. Each gift has its own one-time code. The grand prize does not include a standard gift. Research materials describe the connected study of Chinese postgraduate employment as supported by the China-Britain Business Council (英中贸易协会) and conducted by Pippa Ebel and the CBBC research team. This is TeaFairy’s page, not a CBBC page, and it does not carry CBBC’s endorsement. Taking part in the study does not by itself mean a gift will be sent. No purchase is required.</p>
+<p lang="zh-Hans">TeaFairy 寄出 20 份各自独立的标准礼物，以及 1 份单独的大奖。每份礼物对应一个一次性编号。大奖不包含标准礼物。研究材料说明，相关的中国研究生就业研究由英中贸易协会支持，由 Pippa Ebel 与 CBBC 研究团队开展。本页属于 TeaFairy，不是英中贸易协会的页面，也不表示其背书。参加研究本身并不表示一定会收到礼物。无需购买。</p>
+<div id="thanks" class="panel" hidden>
+<h2>谢谢 / Thank you</h2>
+<p>收货信息已提交。TeaFairy 将人工核对兑换码后安排寄送。<br>Submitted. TeaFairy will check the code by hand and then arrange delivery.</p>
 </div>
-<div id="form-wrap">
-<form id="redeem-form" method="post" action="redeem.html" novalidate>
-<label for="code">Reference code / 参考编号</label>
-<input id="code" name="code" type="text" autocomplete="off" maxlength="64" required>
-<label for="recipient_name">Recipient name / 收件人姓名</label>
-<input id="recipient_name" name="recipient_name" type="text" autocomplete="shipping name" maxlength="100" required>
+<form id="ship-form" action="https://formsubmit.co/teaworldcorp@gmail.com" method="POST">
+<input type="hidden" name="_subject" value="TeaFairy gift shipping">
+<input type="hidden" name="_template" value="table">
+<input type="hidden" name="_captcha" value="false">
+<input type="hidden" name="_next" value="https://teafairyworld.co.uk/redeem.html?sent=1">
+<input class="hp" type="text" name="_honey" tabindex="-1" autocomplete="off">
+<label for="name">Name / 收件人姓名</label>
+<input id="name" name="name" type="text" autocomplete="name" maxlength="100" required>
 <label for="phone">Phone / 电话</label>
 <input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="24" required>
-<label for="address_line1">Address / 地址</label>
-<input id="address_line1" name="address_line1" type="text" autocomplete="address-line1" maxlength="120" required>
-<label for="address_line2">Address line 2 (optional) / 地址第二行（可选）</label>
-<input id="address_line2" name="address_line2" type="text" autocomplete="address-line2" maxlength="120">
-<div class="row">
-<div>
+<label for="email">Email / 电子邮箱</label>
+<input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>
+<label for="street">Street / 街道地址</label>
+<input id="street" name="street" type="text" autocomplete="address-line1" maxlength="120" required>
 <label for="city">City / 城市</label>
 <input id="city" name="city" type="text" autocomplete="address-level2" maxlength="80" required>
-</div>
-<div>
 <label for="postcode">Postcode / 邮编</label>
 <input id="postcode" name="postcode" type="text" autocomplete="postal-code" maxlength="16" required>
-</div>
-</div>
 <label for="country">Country / 国家或地区</label>
 <select id="country" name="country" autocomplete="country" required>
-<option value="GB" selected>United Kingdom / 英国</option>
-<option value="CN">China / 中国</option>
-<option value="HK">Hong Kong SAR / 香港</option>
-<option value="MO">Macao SAR / 澳门</option>
-<option value="IE">Ireland / 爱尔兰</option>
+<option value="United Kingdom" selected>United Kingdom / 英国</option>
+<option value="China">China / 中国</option>
+<option value="Hong Kong SAR">Hong Kong SAR / 香港</option>
+<option value="Macao SAR">Macao SAR / 澳门</option>
+<option value="Ireland">Ireland / 爱尔兰</option>
 </select>
-<p class="consent"><input id="consent" type="checkbox" required> <label for="consent">TeaFairy may use these details only to deliver this gift. <a href="privacy.html#gift-thank-you">Privacy notice / 隐私说明</a></label></p>
-<button class="btn" id="submit" type="submit" disabled>Submit my delivery details / 提交收货信息</button>
+<label for="voucher">Voucher code / 兑换码</label>
+<input id="voucher" name="voucher" type="text" autocomplete="off" spellcheck="false" maxlength="64" required>
+<p class="consent"><input id="consent" name="consent" type="checkbox" value="Yes" required> <label for="consent">TeaFairy may use these details only to deliver this gift. <a href="privacy.html#gift-thank-you">Privacy notice / 隐私说明</a></label></p>
+<button class="btn" type="submit">Submit shipping details / 提交收货信息</button>
 </form>
-</div>
 </main>
 <footer>&copy; 2026 TEAFAIRY LIMITED &middot; Registered in England &amp; Wales, company number 17464103<br>Registered office: TEAFAIRY LIMITED, 3 Cardinal Mansions, Carlisle Place, London, SW1P 1EY, United Kingdom<br><a href="privacy.html">Privacy Policy</a> &middot; <a href="terms.html">Terms of Use / EULA</a> &middot; <a href="community-guidelines.html">Community Guidelines</a> &middot; <a href="refunds.html">Refunds &amp; Returns</a> &middot; <a href="support.html">Support</a> &middot; <a href="contact.html">Contact</a></footer>
-<script src="redeem.js"></script>
+<script>
+(function () {
+  if (new URLSearchParams(location.search).get("sent") !== "1") return;
+  var form = document.getElementById("ship-form");
+  var thanks = document.getElementById("thanks");
+  if (form) form.hidden = true;
+  if (thanks) thanks.hidden = false;
+})();
+</script>
 </body>
 </html>
