@@ -6,6 +6,17 @@ main{max-width:960px;margin:auto;padding:30px 20px}h1,h2{color:var(--tea);font-w
 .hero{text-align:center;padding:60px 20px;background:linear-gradient(#f1ecdf,#faf7f0)}.hero h1{font-size:2.6em;margin:0}.slogan{font-size:1.3em;color:var(--gold)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.card{background:#fff;border:1px solid #e6dfcf;border-radius:8px;padding:18px;text-align:center}
 .card b{display:block;font-size:2em;color:var(--gold)}.soon{background:var(--tea);color:#fff;border-radius:10px;padding:28px;text-align:center}.soon h2{color:#fff}
+.app-store{display:flex;flex-wrap:wrap;gap:28px;align-items:center;justify-content:center}
+.app-qr{margin:0;flex:0 1 300px;max-width:min(300px,100%);background:#fff;padding:16px 16px 12px;border-radius:12px}
+.app-qr a{display:block}
+.app-qr img{width:100%;height:auto;display:block;object-fit:contain}
+.app-qr figcaption{color:var(--ink);font-size:.95rem;line-height:1.4;margin-top:10px}
+.app-store-copy{flex:1 1 240px;max-width:440px}
+.app-badge{margin:0 0 8px}
+.app-badge img{height:48px;width:auto;display:inline-block}
+.qr-files{margin:18px 0 0;font-size:.82em}
+.qr-files a{color:#fff}
+@media(max-width:700px){.app-store{gap:18px}.app-qr{flex-basis:100%}}
 .todo{background:#fff3cd;border:1px dashed #c9a227;padding:2px 6px}.notice{background:#fff3cd;border-left:4px solid #c9a227;padding:12px 16px}
 footer{text-align:center;font-size:.9em;color:#777;padding:30px 20px;border-top:1px solid #e6dfcf}footer a{color:#777}
 
