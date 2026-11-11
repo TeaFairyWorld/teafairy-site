@@ -194,7 +194,7 @@ async function orders(){
   app.innerHTML=`<p>Status: <select style="width:auto" onchange="_ost=this.value;orders()">${['paid','shipped','completed','pending','cancelled','refunded','all'].map(s=>`<option ${s===st?'selected':''}>${s}</option>`).join('')}</select></p>
   <table><tr><th>Date</th><th>Status</th><th>Customer / ship to</th><th>Items</th><th>Total</th><th>Shipping</th></tr>`+data.map(o=>`<tr>
   <td>${new Date(o.created_at).toLocaleString('en-GB')}<br>${o.is_test?'<span class="tag">TEST</span>':''}</td><td><span class="tag ${o.status}">${o.status}</span>${o.channel==='web'?' <span class="tag">Guest website</span>':''}</td>
-  <td>${esc(o.shipping_name)}<br><small>${addr(o.shipping_address)}<br>${esc(o.customer_email)}</small></td>
+  <td>${esc(o.shipping_name)}<br><small>${addr(o.shipping_address)}<br>${esc(o.customer_email)}${o.customer_phone?`<br>☎ ${esc(o.customer_phone)}`:''}</small></td>
   <td>${o.order_items.map(i=>`${i.quantity}× ${esc(i.products?.name_en)} <small>(${esc(i.products?.sku)})</small>`).join('<br>')}</td>
   <td>${money(o.amount_minor)}<br><small>incl. ship ${money(o.shipping_minor)}</small></td>
   <td>${o.status==='paid'?`<input id="tr_${o.id}" placeholder="Tracking number"><input id="ca_${o.id}" placeholder="Carrier" value="Royal Mail"><button onclick="ship('${o.id}')">Mark shipped</button>`:
