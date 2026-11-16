@@ -81,3 +81,37 @@ button.btn:disabled{opacity:.65;cursor:not-allowed}
 .confirm-ref{font-size:1.2em}
 .redeem :focus-visible,.lang-switch button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 @media(max-width:700px){.redeem .row{grid-template-columns:1fr}.cbbc-logo{width:min(100%,280px)}}
+
+.account-slot{margin-left:auto}
+.account-slot>a{white-space:nowrap}
+.account-menu{position:relative}
+.account-menu summary{cursor:pointer;list-style:none;max-width:16rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-menu summary::-webkit-details-marker{display:none}
+.account-menu .menu{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid #e6dfcf;border-radius:8px;min-width:11rem;padding:8px;display:flex;flex-direction:column;gap:6px;z-index:5;box-shadow:0 8px 24px #0001}
+.account-form{max-width:32rem}
+.account-form label{display:block;margin-top:12px}
+.account-form input[type="email"],.account-form input[type="text"]{width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid #d9d0bc;border-radius:6px;background:#fff;color:var(--ink)}
+.account-form .check{display:flex;gap:10px;align-items:flex-start}
+.account-form .check input{width:auto;margin-top:6px}
+.account-form .btn{margin-top:16px}
+.auth-status{min-height:1.4em}
+.apple-btn{display:flex;align-items:center;justify-content:center;width:100%;max-width:32rem;background:#000;color:#fff;border:0;border-radius:8px;padding:12px 16px;font:inherit;font-size:16px;cursor:pointer;margin:0 0 16px}
+.apple-btn:hover{background:#222}
+.course-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.course-card{background:#fff;border:1px solid #e6dfcf;border-radius:10px;overflow:hidden;text-align:left;margin:0 0 16px}
+.course-card img,.course-cover{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#f1ecdf}
+.course-card .pad{padding:16px}
+.course-card h2{margin:0 0 8px;font-size:1.35rem}
+.course-card h2 a{color:var(--tea);text-decoration:none}
+.meta{color:#666;font-size:.92em}
+.lessons{list-style:none;padding:0;margin:12px 0 0}
+.lessons a{display:flex;gap:12px;align-items:center;padding:12px 0;color:inherit;text-decoration:none;border-top:1px solid #e6dfcf}
+.lessons img{width:112px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:#f1ecdf;flex:none}
+.lessons .grow{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.badge{display:inline-block;background:#f1ecdf;color:var(--tea);border-radius:999px;padding:2px 8px;font-size:.85em;width:max-content}
+.player-soon{background:#fff;border:1px solid #e6dfcf;border-radius:10px;padding:18px;text-align:center}
+.player-soon video,.player-soon iframe{width:100%;aspect-ratio:16/9;background:#111;border:0;border-radius:8px}
+.price{font-size:1.35em;font-weight:700;margin:8px 0}
+.checkout-form{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:12px 0}
+.checkout-form input{width:6rem;font:inherit;font-size:16px;padding:8px;border:1px solid #d9d0bc;border-radius:6px;text-align:center;color:var(--ink)}
+@media(max-width:640px){.lessons img{width:84px}.account-menu summary{max-width:10rem}}

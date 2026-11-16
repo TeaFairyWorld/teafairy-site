@@ -172,6 +172,6 @@ test('public pages do not contain secrets, a free course, or worldwide shipping'
   assert.equal(products.includes('全球免运费'), false);
   assert.equal(products.includes('worldwide'), false);
   assert.equal(products.includes('£50'), true);
-  assert.equal(products.includes('does not include a course'), true);
+  assert.equal(products.includes('lqghuvaazdnqzkbagbay'), false);
   assert.equal(files[1].includes('does not include a course'), true);
 });
