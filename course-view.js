@@ -124,7 +124,7 @@ export function productCardHtml(product) {
   const img = image ? `<img src="${escapeHtml(image)}" alt="">` : '';
   let grant = '';
   if (isUuid(product.grants_course_id)) {
-    const title = sanitizePublicText(product.course_title_en || '');
+    const title = sanitizePublicText(product.grants_course_title_en || '');
     grant = `<p>${title ? `Includes the course ${escapeHtml(title)}.` : 'Includes a course.'}</p>`;
   } else if (Object.prototype.hasOwnProperty.call(product, 'grants_course_id')) {
     grant = '<p>This product does not include a course.</p>';

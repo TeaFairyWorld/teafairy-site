@@ -218,14 +218,14 @@ export function createMembershipClient(createClient, config = membershipConfig) 
 }
 
 function withLessons(row) {
-  const { course_lessons: nested, ...course } = row;
+  const { course_lessons_public: nested, ...course } = row;
   return { course, lessons: sortLessons(nested) };
 }
 
 export async function loadPublishedCourses(client) {
   const { data, error } = await client
     .from('courses')
-    .select(`${COURSE_LIST_COLUMNS},course_lessons(${LESSON_LIST_COLUMNS})`)
+    .select(`${COURSE_LIST_COLUMNS},course_lessons_public(${LESSON_LIST_COLUMNS})`)
     .eq('status', 'published')
     .order('sort_order', { ascending: true });
   if (error) throw error;
@@ -236,7 +236,7 @@ export async function loadCourse(client, id) {
   if (!isUuid(id)) return null;
   const { data, error } = await client
     .from('courses')
-    .select(`${COURSE_LIST_COLUMNS},course_lessons(${LESSON_LIST_COLUMNS})`)
+    .select(`${COURSE_LIST_COLUMNS},course_lessons_public(${LESSON_LIST_COLUMNS})`)
     .eq('id', id)
     .eq('status', 'published')
     .maybeSingle();
@@ -247,7 +247,7 @@ export async function loadCourse(client, id) {
 export async function loadLesson(client, id) {
   if (!isUuid(id)) return null;
   const { data: lesson, error } = await client
-    .from('course_lessons')
+    .from('course_lessons_public')
     .select(LESSON_LIST_COLUMNS)
     .eq('id', id)
     .maybeSingle();
@@ -258,7 +258,7 @@ export async function loadLesson(client, id) {
   return { ...course, lesson: course.lessons.find((item) => item.id === lesson.id) || lesson };
 }
 
-const SHOP_COLUMNS = 'id,sku,name_en,name_zh,description_en,price_minor,currency,image_url,images,in_stock,grants_course_id,course_title_en';
+const SHOP_COLUMNS = 'id,sku,name_en,name_zh,description_en,price_minor,currency,image_url,images,in_stock,grants_course_id,grants_course_title_en,grants_course_title_zh';
 const SHOP_COLUMNS_PLAIN = 'id,sku,name_en,name_zh,description_en,price_minor,currency,image_url,images,in_stock';
 
 /** Shop products whose grants_course_id is this course. An empty list means "do not mention a product". */

@@ -86,7 +86,7 @@ form.addEventListener('submit', async (event) => {
     return;
   }
   statusEl.textContent = 'Sending a code…';
-  const { error } = await sendEmailCode(supabase, email, { createUser: creating, redirectTo: authCallbackUrl(next) });
+  const { error } = await sendEmailCode(supabase, email, { createUser: creating });
   button.disabled = false;
   if (error) {
     statusEl.textContent = friendly(error, creating, false);
@@ -96,7 +96,7 @@ form.addEventListener('submit', async (event) => {
   codeBox.hidden = false;
   form.code.disabled = false;
   button.textContent = creating ? 'Create account' : 'Sign in';
-  statusEl.textContent = 'Check your email for a 6-digit code. If the message has a link, it brings you back to this website.';
+  statusEl.textContent = 'Check your email for a 6-digit code.';
 });
 
 function friendly(error, createUser, checkingCode) {

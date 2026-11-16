@@ -29,14 +29,14 @@ function jwtPayload(token) {
   return JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
 }
 
-test('membership config is the test project anon key', () => {
+test('membership config is the production anon key', () => {
   const payload = jwtPayload(membershipConfig.supabaseAnonKey);
-  assert.equal(payload.ref, 'mwtyriuhqltmlgqmygam');
+  assert.equal(payload.ref, 'lqghuvaazdnqzkbagbay');
   assert.equal(payload.role, 'anon');
-  assert.equal(membershipConfig.supabaseUrl, 'https://mwtyriuhqltmlgqmygam.supabase.co');
+  assert.equal(membershipConfig.supabaseUrl, 'https://lqghuvaazdnqzkbagbay.supabase.co');
   assert.equal(membershipConfig.appleSignIn, false);
-  assert.equal(membershipConfig.streamCustomerCode, '');
   assert.equal(membershipConfig.supabaseAnonKey.includes('service_role'), false);
+  assert.equal(membershipConfig.supabaseAnonKey.includes('mwtyriuhqltmlgqmygam'), false);
 });
 
 test('guest checkout stays on the production project', () => {
@@ -50,10 +50,13 @@ test('lesson catalogue columns do not include a stream id', () => {
   assert.equal(LESSON_LIST_COLUMNS.includes('stream_uid'), false);
   assert.equal(COURSE_LIST_COLUMNS.includes('price_minor'), true);
   assert.equal(COURSE_LIST_COLUMNS.includes('apple_product_id'), false);
-  const source = ['membership.js', 'lesson-page.js', 'course-page.js', 'products-page.js']
+  const source = ['membership.js', 'lesson-page.js', 'course-page.js', 'products-page.js', 'membership-config.js']
     .map((name) => readFileSync(new URL(`./${name}`, import.meta.url), 'utf8'))
     .join('\n');
   assert.equal(source.includes('stream_uid'), false);
+  assert.equal(source.includes('mwtyriuhqltmlgqmygam'), false);
+  assert.match(source, /course_lessons_public/);
+  assert.equal(source.includes("from('course_lessons')"), false);
 });
 
 test('prices use the app en-GB currency format', () => {
@@ -95,12 +98,12 @@ test('course checkout uses the server price and a Stripe URL', () => {
   );
 });
 
-test('shop checkout posts sku and quantity to the test project', () => {
+test('shop checkout posts sku and quantity to production', () => {
   const body = shopCheckoutBody({ sku: 'TF-BEGINNER-SET', quantity: 2, price_minor: 1, email: 'a@b.c' });
   assert.deepEqual(body, { ok: true, body: { sku: 'TF-BEGINNER-SET', quantity: 2 } });
   assert.equal(shopCheckoutBody({ sku: '../secret', quantity: 1 }).error, 'sku');
-  assert.equal(shopCheckoutEndpoint().includes('mwtyriuhqltmlgqmygam'), true);
-  assert.equal(shopCheckoutEndpoint().includes('lqghuvaazdnqzkbagbay'), false);
+  assert.equal(shopCheckoutEndpoint().includes('lqghuvaazdnqzkbagbay'), true);
+  assert.equal(shopCheckoutEndpoint().includes('mwtyriuhqltmlgqmygam'), false);
 });
 
 test('access is checked again after payment', async () => {
@@ -179,7 +182,7 @@ test('course pages sell at the backend price and lock unpaid lessons', () => {
   const card = productCardHtml({ sku: 'TF-BEGINNER-SET', name_en: 'TeaFairy Beginner Tea Set', price_minor: 9999, currency: 'GBP', grants_course_id: null });
   assert.match(card, /£99\.99/);
   assert.match(card, /does not include a course/);
-  assert.match(productCardHtml({ sku: 'SET', name_en: 'Set', price_minor: 1000, currency: 'GBP', grants_course_id: courseId, course_title_en: 'TeaFairy\'s Tea-by-Tea' }), /Includes the course/);
+  assert.match(productCardHtml({ sku: 'SET', name_en: 'Set', price_minor: 1000, currency: 'GBP', grants_course_id: courseId, grants_course_title_en: 'TeaFairy\'s Tea-by-Tea' }), /Includes the course/);
   assert.match(detail, /TeaFairy \(茶仙子\)/);
   assert.match(ownedCourseHtml(item), /On your account/);
 });
