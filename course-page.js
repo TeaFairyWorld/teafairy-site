@@ -1,5 +1,5 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-import { courseDetailHtml } from './course-view.js';
+import { bindBuyButton, courseDetailHtml } from './course-view.js';
 import {
   bundleNote,
   bundledProducts,
@@ -7,6 +7,7 @@ import {
   hasAccess,
   loadCourse,
   sanitizePublicText,
+  startCourseCheckout,
 } from './membership.js';
 
 const root = document.querySelector('#course');
@@ -23,7 +24,8 @@ try {
     const owned = session ? await hasAccess(supabase, item.course.id) : false;
     const title = sanitizePublicText(item.course.title_en);
     if (title) document.title = `${title} | TeaFairy`;
-    root.innerHTML = courseDetailHtml(item, { owned, note: bundleNote(products) });
+    root.innerHTML = courseDetailHtml(item, { owned, signedIn: !!session, note: bundleNote(products) });
+    bindBuyButton(supabase, startCourseCheckout);
   }
 } catch (error) {
   console.warn('course', error);

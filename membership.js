@@ -1,15 +1,14 @@
+import { isStripeCheckoutUrl } from './checkout.js';
 import { membershipConfig } from './membership-config.js';
 
-// Catalogue columns only. stream_uid is requested later, and only for a preview lesson
-// when website playback is configured. Paid lessons never get a playback URL here.
-export const COURSE_LIST_COLUMNS = 'id,title_en,description_en,instructor,cover_url,sort_order';
+// Prices come from the database. Playback comes from get-lesson-playback.
+export const COURSE_LIST_COLUMNS = 'id,title_en,description_en,instructor,cover_url,sort_order,price_minor,currency';
 export const LESSON_LIST_COLUMNS = 'id,course_id,position,title_en,is_preview,duration_s,thumbnail_url';
+export const SHOP_MAX_QUANTITY = 20;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const STREAM_CODE = /^[A-Za-z0-9_-]{1,64}$/;
-const STREAM_UID = /^[A-Za-z0-9]{1,64}$/;
+const SKU = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 const NEXT_PAGES = new Set(['my-courses.html', 'courses.html', 'course.html', 'lesson.html', 'index.html']);
-const SHOP_PAGE_SKUS = new Set(['beginner-tea-set', 'TF-BEGINNER-SET']);
 
 export function isUuid(value) {
   return typeof value === 'string' && UUID.test(value);
@@ -84,14 +83,44 @@ export function coverUrl(course, lessons) {
   return httpsUrl(course && course.cover_url) || httpsUrl((lessons || []).find((lesson) => httpsUrl(lesson.thumbnail_url))?.thumbnail_url);
 }
 
-/** Playback URL for a lesson that is already marked as a public preview. */
-export function previewStreamUrl(lesson, config) {
-  if (!lesson || lesson.is_preview !== true) return null;
-  const code = config && config.streamCustomerCode;
-  const uid = lesson.stream_uid;
-  if (typeof code !== 'string' || !STREAM_CODE.test(code)) return null;
-  if (typeof uid !== 'string' || !STREAM_UID.test(uid)) return null;
-  return `https://customer-${code}.cloudflarestream.com/${uid}/manifest/video.m3u8`;
+function cloudflareHost(hostname) {
+  return hostname === 'cloudflarestream.com'
+    || hostname === 'videodelivery.net'
+    || hostname.endsWith('.cloudflarestream.com')
+    || hostname.endsWith('.videodelivery.net');
+}
+
+/** Accept only an https Cloudflare Stream URL returned by get-lesson-playback. */
+export function streamPlayerUrl(payload) {
+  const raw = payload && (payload.iframe_url || payload.playback_url);
+  if (typeof raw !== 'string' || !raw) return '';
+  let url;
+  try { url = new URL(raw); } catch { return ''; }
+  if (url.protocol !== 'https:' || !cloudflareHost(url.hostname)) return '';
+  if (url.username || url.password) return '';
+  return url.href;
+}
+
+export function playbackStillValid(expiresAt, now = Date.now()) {
+  if (!expiresAt) return true;
+  const time = Date.parse(expiresAt);
+  if (!Number.isFinite(time)) return true;
+  return time > now;
+}
+
+export function courseCheckoutResult(status, body) {
+  if (status === 409 && body && body.error === 'already_owned') return { ok: false, error: 'already_owned' };
+  if (status !== 200 || !body || !isStripeCheckoutUrl(body.url)) return { ok: false, error: 'unavailable' };
+  return { ok: true, url: body.url };
+}
+
+export function playbackResult(status, body) {
+  if (status === 403) return { ok: false, error: 'locked' };
+  const url = streamPlayerUrl(body);
+  if (status !== 200 || !url) return { ok: false, error: 'unavailable' };
+  if (!playbackStillValid(body.expires_at)) return { ok: false, error: 'expired' };
+  const iframe = Boolean(body.iframe_url && streamPlayerUrl({ iframe_url: body.iframe_url }) === url);
+  return { ok: true, url, iframe, expiresAt: body.expires_at || null };
 }
 
 export function appleSignInEnabled(config = membershipConfig) {
@@ -107,7 +136,13 @@ export function safeNext(value) {
   const page = url.pathname.replace(/^\//, '');
   if (!NEXT_PAGES.has(page)) return fallback;
   const id = url.searchParams.get('id');
-  const extra = [...url.searchParams.keys()].filter((key) => key !== 'id');
+  const keys = [...url.searchParams.keys()];
+  if (page === 'my-courses.html') {
+    if (keys.length === 0) return page;
+    if (keys.length === 1 && url.searchParams.get('paid') === '1') return 'my-courses.html?paid=1';
+    return fallback;
+  }
+  const extra = keys.filter((key) => key !== 'id');
   if (extra.length) return fallback;
   if (page === 'course.html' || page === 'lesson.html') {
     if (id && !isUuid(id)) return fallback;
@@ -133,10 +168,32 @@ export function productsIncludingCourse(products, courseId) {
   return (products || []).filter((product) => product && product.grants_course_id === courseId);
 }
 
-/** The static shop page sells the Beginner Tea Set. Other SKUs have no page on this site. */
 export function shopHrefForProduct(product) {
-  if (!product || !SHOP_PAGE_SKUS.has(product.sku)) return '';
-  return 'products.html';
+  if (!product || typeof product.sku !== 'string' || !SKU.test(product.sku)) return '';
+  return `products.html#${encodeURIComponent(product.sku)}`;
+}
+
+/** Guest checkout body. Price, email, and return URLs are dropped; the server sets them. */
+export function shopCheckoutBody(input) {
+  const sku = input && input.sku;
+  if (typeof sku !== 'string' || !SKU.test(sku)) return { ok: false, error: 'sku' };
+  const quantity = input ? input.quantity : undefined;
+  if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > SHOP_MAX_QUANTITY) {
+    return { ok: false, error: 'quantity' };
+  }
+  return { ok: true, body: { sku, quantity } };
+}
+
+export function shopCheckoutEndpoint(config = membershipConfig) {
+  return `${String(config.supabaseUrl || '').replace(/\/$/, '')}/functions/v1/create-guest-checkout`;
+}
+
+export function courseCheckoutEndpoint(config = membershipConfig) {
+  return `${String(config.supabaseUrl || '').replace(/\/$/, '')}/functions/v1/create-course-checkout`;
+}
+
+export function lessonPlaybackEndpoint(config = membershipConfig) {
+  return `${String(config.supabaseUrl || '').replace(/\/$/, '')}/functions/v1/get-lesson-playback`;
 }
 
 export function createMembershipClient(createClient, config = membershipConfig) {
@@ -201,15 +258,25 @@ export async function loadLesson(client, id) {
   return { ...course, lesson: course.lessons.find((item) => item.id === lesson.id) || lesson };
 }
 
+const SHOP_COLUMNS = 'id,sku,name_en,name_zh,description_en,price_minor,currency,image_url,images,in_stock,grants_course_id,course_title_en';
+const SHOP_COLUMNS_PLAIN = 'id,sku,name_en,name_zh,description_en,price_minor,currency,image_url,images,in_stock';
+
 /** Shop products whose grants_course_id is this course. An empty list means "do not mention a product". */
 export async function bundledProducts(client, courseId) {
   if (!isUuid(courseId)) return [];
-  const { data, error } = await client
-    .from('products_public')
-    .select('id,sku,name_en,price_minor,currency,image_url,grants_course_id')
-    .eq('grants_course_id', courseId);
-  if (error) return [];
-  return productsIncludingCourse(data, courseId);
+  let result = await client.from('products_public').select(SHOP_COLUMNS).eq('grants_course_id', courseId);
+  if (result.error) {
+    result = await client.from('products_public').select('id,sku,name_en,price_minor,currency,image_url,grants_course_id').eq('grants_course_id', courseId);
+  }
+  if (result.error) return [];
+  return productsIncludingCourse(result.data, courseId);
+}
+
+export async function loadShopProducts(client) {
+  let result = await client.from('products_public').select(SHOP_COLUMNS).order('name_en');
+  if (result.error) result = await client.from('products_public').select(SHOP_COLUMNS_PLAIN).order('name_en');
+  if (result.error) throw result.error;
+  return result.data || [];
 }
 
 export async function hasAccess(client, courseId) {
@@ -230,21 +297,62 @@ export async function coursesWithAccess(client) {
   return owned;
 }
 
-/**
- * Phase 2 replaces this with a short-lived Cloudflare Stream token from an Edge Function.
- * Until then, a preview plays only when it is marked is_preview and the public customer code is set.
- * Paid lessons are not requested and are not given a URL.
- */
-export async function previewPlaybackUrl(client, lessonId, config = membershipConfig) {
-  if (!isUuid(lessonId) || !config || !config.streamCustomerCode) return null;
-  const { data, error } = await client
-    .from('course_lessons')
-    .select('id,is_preview,stream_uid')
-    .eq('id', lessonId)
-    .eq('is_preview', true)
-    .maybeSingle();
-  if (error || !data) return null;
-  return previewStreamUrl(data, config);
+async function authHeaders(client, { userRequired = false } = {}) {
+  const { data: { session } } = await client.auth.getSession();
+  const token = session && session.access_token;
+  if (userRequired && !token) return null;
+  return {
+    'Content-Type': 'application/json',
+    apikey: membershipConfig.supabaseAnonKey,
+    Authorization: 'Bearer ' + (token || membershipConfig.supabaseAnonKey),
+  };
+}
+
+export async function startCourseCheckout(client, courseId, { fetchImpl = fetch } = {}) {
+  if (!isUuid(courseId)) return { ok: false, error: 'unavailable' };
+  const headers = await authHeaders(client, { userRequired: true });
+  if (!headers) return { ok: false, error: 'signed_out' };
+  let response;
+  try {
+    response = await fetchImpl(courseCheckoutEndpoint(), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ course_id: courseId }),
+    });
+  } catch {
+    return { ok: false, error: 'unavailable' };
+  }
+  const body = await response.json().catch(() => null);
+  return courseCheckoutResult(response.status, body);
+}
+
+export async function fetchLessonPlayback(client, lessonId, { fetchImpl = fetch } = {}) {
+  if (!isUuid(lessonId)) return { ok: false, error: 'unavailable' };
+  const headers = await authHeaders(client);
+  if (!headers) return { ok: false, error: 'unavailable' };
+  let response;
+  try {
+    response = await fetchImpl(lessonPlaybackEndpoint(), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ lesson_id: lessonId }),
+    });
+  } catch {
+    return { ok: false, error: 'unavailable' };
+  }
+  const body = await response.json().catch(() => null);
+  return playbackResult(response.status, body);
+}
+
+export async function retryUntilAccess(load, { paid = false, attempts = 4, wait = async () => {} } = {}) {
+  const tries = paid ? attempts : 1;
+  let courses = [];
+  for (let i = 0; i < tries; i += 1) {
+    courses = await load();
+    if (!paid || (courses && courses.length) || i === tries - 1) break;
+    await wait();
+  }
+  return courses || [];
 }
 
 export async function sendEmailCode(client, email, { createUser, redirectTo } = {}) {
@@ -312,5 +420,5 @@ export function bundleNote(products) {
     return href ? `<a href="${escapeHtml(href)}">${label}</a>` : label;
   });
   const list = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
-  return `<p class="notice">This course is not sold on its own. It is included with ${list}.</p>`;
+  return `<p class="notice">Included with ${list}.</p>`;
 }

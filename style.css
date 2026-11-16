@@ -110,5 +110,8 @@ button.btn:disabled{opacity:.65;cursor:not-allowed}
 .lessons .grow{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
 .badge{display:inline-block;background:#f1ecdf;color:var(--tea);border-radius:999px;padding:2px 8px;font-size:.85em;width:max-content}
 .player-soon{background:#fff;border:1px solid #e6dfcf;border-radius:10px;padding:18px;text-align:center}
-.player-soon video{width:100%;aspect-ratio:16/9;background:#111;border-radius:8px}
+.player-soon video,.player-soon iframe{width:100%;aspect-ratio:16/9;background:#111;border:0;border-radius:8px}
+.price{font-size:1.35em;font-weight:700;margin:8px 0}
+.checkout-form{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:12px 0}
+.checkout-form input{width:6rem;font:inherit;font-size:16px;padding:8px;border:1px solid #d9d0bc;border-radius:6px;text-align:center;color:var(--ink)}
 @media(max-width:640px){.lessons img{width:84px}.account-menu summary{max-width:10rem}}
