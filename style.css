@@ -115,3 +115,22 @@ button.btn:disabled{opacity:.65;cursor:not-allowed}
 .checkout-form{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:12px 0}
 .checkout-form input{width:6rem;font:inherit;font-size:16px;padding:8px;border:1px solid #d9d0bc;border-radius:6px;text-align:center;color:var(--ink)}
 @media(max-width:640px){.lessons img{width:84px}.account-menu summary{max-width:10rem}}
+
+.news-article{max-width:760px}
+.news-article .news-kicker{margin:0 0 8px;color:#666;font-size:.95em}
+.news-article .news-kicker a{color:var(--tea)}
+.news-article h1{margin-bottom:8px}
+.news-article .news-sub{margin:0 0 8px;color:var(--tea);font-size:1.25em;font-weight:normal}
+.news-article .news-meta{margin:0 0 28px;color:#666;font-size:.95em}
+.news-p{margin:0 0 1.25em}
+.news-p p{margin:0 0 .4em}
+.news-p p[lang="zh-Hans"]{color:#4a4944;font-size:.98em;font-family:"Noto Serif CJK SC","Source Han Serif SC","Songti SC","STSong",PMingLiU,Georgia,"Times New Roman",serif}
+.news-article figure{margin:1.25em 0}
+.news-article figure img{width:100%;height:auto;display:block;background:#fff;border:1px solid #e6dfcf;border-radius:8px}
+.news-article figure.news-banner{margin:1.6em 0 1.2em}
+.news-article figure.news-banner img{border:0;border-radius:0;background:transparent}
+.news-article figcaption{font-size:.9em;color:#666;padding:8px 2px 0;text-align:left;line-height:1.55}
+.news-article figcaption span[lang="zh-Hans"]{display:block}
+.news-article h2{margin:1.6em 0 .4em;font-size:1.25em}
+.news-article h2 span[lang="zh-Hans"]{display:block;font-size:.92em;margin-top:.2em;color:#4a4944}
+.news-end{margin-top:36px}
